@@ -11,6 +11,7 @@ import java.util.List;
 @Builder
 public class Signal {
     SignalType signalType;
+
     List<Double> samples;
     Double sampleTime;
     Double amplitude;
