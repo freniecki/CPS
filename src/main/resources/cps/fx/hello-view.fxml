@@ -20,10 +20,10 @@
            <Button fx:id="generateButton" layoutX="892.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
            <MenuButton fx:id="operationMenuButton" layoutX="32.0" layoutY="22.0" text="Operation">
                <items>
-                   <MenuItem text="Sum" />
-                   <MenuItem text="Difference" />
-                   <MenuItem text="Multiply" />
-                   <MenuItem text="Divide" />
+                   <MenuItem fx:id="sumMenuItem" text="Sum" />
+                   <MenuItem fx:id="differenceMenuItem" text="Difference" />
+                   <MenuItem fx:id="multiplyMenuItem" text="Multiply" />
+                   <MenuItem fx:id="divideMenuItem" text="Divide" />
                </items>
            </MenuButton>
          <Button layoutX="243.0" layoutY="22.0" mnemonicParsing="false" text="Save to file" />
@@ -35,11 +35,12 @@
          <children>
             <VBox alignment="CENTER_LEFT" maxWidth="150.0" prefHeight="240.0" prefWidth="160.0">
                <children>
-                  <CheckBox alignment="CENTER" mnemonicParsing="false" text="Uniform Noise">
+                  <CheckBox fx:id="uniformNoiseCheckBox" alignment="CENTER" mnemonicParsing="false" text="Uniform Noise">
                      <VBox.margin>
                         <Insets bottom="3.5" top="3.5" />
-                     </VBox.margin></CheckBox>
-                  <CheckBox mnemonicParsing="false" text="Gauss Noise">
+                     </VBox.margin>
+                  </CheckBox>
+                  <CheckBox fx:id="gaussNoiseCheckBox" mnemonicParsing="false" text="Gauss Noise">
                     <VBox.margin>
                        <Insets bottom="3.5" top="3.5" />
                     </VBox.margin>
@@ -49,37 +50,42 @@
                           <Insets bottom="3.5" top="3.5" />
                       </VBox.margin>
                   </CheckBox>
-                  <CheckBox mnemonicParsing="false" text="Sine 1half">
+                  <CheckBox fx:id="sineHalfCheckBox" mnemonicParsing="false" text="Sine half">
                       <VBox.margin>
                           <Insets bottom="3.5" top="3.5" />
                       </VBox.margin>
                   </CheckBox>
-                  <CheckBox mnemonicParsing="false" text="Sine 2half">
+                  <CheckBox fx:id="sineFullCheckBox" mnemonicParsing="false" text="Sine full">
                       <VBox.margin>
                           <Insets bottom="3.5" top="3.5" />
                       </VBox.margin>
                   </CheckBox>
-                  <CheckBox mnemonicParsing="false" text="Rectangular">
+                  <CheckBox fx:id="rectangularCheckBox" mnemonicParsing="false" text="Rectangular">
                       <VBox.margin>
                           <Insets bottom="3.5" top="3.5" />
                       </VBox.margin>
                   </CheckBox>
-                  <CheckBox mnemonicParsing="false" text="CheckBox">
+                  <CheckBox fx:id="rectangularSymetricCheckBox" mnemonicParsing="false" text="Rectangular Symetric">
                       <VBox.margin>
                           <Insets bottom="3.5" top="3.5" />
                       </VBox.margin>
                   </CheckBox>
-                  <CheckBox mnemonicParsing="false" text="CheckBox">
+                  <CheckBox fx:id="triangularCheckBox" mnemonicParsing="false" text="Triangular">
                       <VBox.margin>
                           <Insets bottom="3.5" top="3.5" />
                       </VBox.margin>
                   </CheckBox>
-                  <CheckBox mnemonicParsing="false" text="CheckBox">
+                  <CheckBox fx:id="unitStepCheckBox" mnemonicParsing="false" text="Unit Step">
                       <VBox.margin>
                           <Insets bottom="3.5" top="3.5" />
                       </VBox.margin>
                   </CheckBox>
-                  <CheckBox mnemonicParsing="false" text="CheckBox">
+                  <CheckBox fx:id="unitImpulseCheckBox" mnemonicParsing="false" text="Unit Impulse">
+                      <VBox.margin>
+                          <Insets bottom="3.5" top="3.5" />
+                      </VBox.margin>
+                  </CheckBox>
+                  <CheckBox fx:id="impulseNoiseCheckBox" mnemonicParsing="false" text="Impulse Noise">
                       <VBox.margin>
                           <Insets bottom="3.5" top="3.5" />
                       </VBox.margin>
