@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -11,95 +9,49 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.HelloController">
-   <bottom>
-      <VBox prefHeight="91.0" prefWidth="600.0" BorderPane.alignment="CENTER" />
-   </bottom>
+<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="838.0" prefWidth="1268.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.HelloController">
    <top>
        <AnchorPane prefHeight="69.0" prefWidth="600.0" BorderPane.alignment="CENTER">
-           <Button fx:id="generateButton" layoutX="892.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
-           <MenuButton fx:id="operationMenuButton" layoutX="32.0" layoutY="22.0" text="Operation">
+           <MenuButton fx:id="signalMenu" layoutX="911.0" layoutY="22.0" mnemonicParsing="false" text="Signal">
                <items>
+                   <MenuItem fx:id="uniformNoiseMenuItem" text="Uniform Noise" />
+                   <MenuItem fx:id="gaussNoiseMenuItem" text="Gauss Noise" />
+                   <MenuItem fx:id="sineMenuItem" text="Sine" />
+                   <MenuItem fx:id="sineHalfMenuItem" text="Half Sine" />
+                   <MenuItem fx:id="sineFullMenuItem" text="Full Sine" />
+                   <MenuItem fx:id="rectangularMenuItem" text="Rectangular" />
+                   <MenuItem fx:id="rectangularSymetricMenuItem" text="Rectangular Symetric" />
+                   <MenuItem fx:id="triangularMenuItem" text="Triangular" />
+                   <MenuItem fx:id="unitStepMenuItem" text="Unit Step" />
+                   <MenuItem fx:id="unitImpulseMenuItem" text="Unit Impulse" />
+                   <MenuItem fx:id="impulseNoiseMenuItem" text="Impulse Noise" />
+               </items>
+           </MenuButton>
+           
+           <MenuButton fx:id="operationMenu" layoutX="1016.0" layoutY="22.0" text="Operation">
+               <items>
+                   <MenuItem fx:id="noneMenuItem" text="None" />
                    <MenuItem fx:id="sumMenuItem" text="Sum" />
                    <MenuItem fx:id="differenceMenuItem" text="Difference" />
                    <MenuItem fx:id="multiplyMenuItem" text="Multiply" />
                    <MenuItem fx:id="divideMenuItem" text="Divide" />
                </items>
            </MenuButton>
-         <Button layoutX="243.0" layoutY="22.0" mnemonicParsing="false" text="Save to file" />
-         <Button layoutX="340.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
+           
+           <Button layoutX="243.0" layoutY="22.0" mnemonicParsing="false" text="Save to file" />
+           <Button layoutX="340.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
+           
+           <Button fx:id="generateButton" layoutX="1142.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
        </AnchorPane>
    </top>
    <center>
       <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
          <children>
-            <VBox alignment="CENTER_LEFT" maxWidth="150.0" prefHeight="240.0" prefWidth="160.0">
-               <children>
-                  <CheckBox fx:id="uniformNoiseCheckBox" alignment="CENTER" mnemonicParsing="false" text="Uniform Noise">
-                     <VBox.margin>
-                        <Insets bottom="3.5" top="3.5" />
-                     </VBox.margin>
-                  </CheckBox>
-                  <CheckBox fx:id="gaussNoiseCheckBox" mnemonicParsing="false" text="Gauss Noise">
-                    <VBox.margin>
-                       <Insets bottom="3.5" top="3.5" />
-                    </VBox.margin>
-                  </CheckBox>
-                  <CheckBox fx:id="sineCheckBox" mnemonicParsing="false" text="Sine signal" >
-                      <VBox.margin>
-                          <Insets bottom="3.5" top="3.5" />
-                      </VBox.margin>
-                  </CheckBox>
-                  <CheckBox fx:id="sineHalfCheckBox" mnemonicParsing="false" text="Sine half">
-                      <VBox.margin>
-                          <Insets bottom="3.5" top="3.5" />
-                      </VBox.margin>
-                  </CheckBox>
-                  <CheckBox fx:id="sineFullCheckBox" mnemonicParsing="false" text="Sine full">
-                      <VBox.margin>
-                          <Insets bottom="3.5" top="3.5" />
-                      </VBox.margin>
-                  </CheckBox>
-                  <CheckBox fx:id="rectangularCheckBox" mnemonicParsing="false" text="Rectangular">
-                      <VBox.margin>
-                          <Insets bottom="3.5" top="3.5" />
-                      </VBox.margin>
-                  </CheckBox>
-                  <CheckBox fx:id="rectangularSymetricCheckBox" mnemonicParsing="false" text="Rectangular Symetric">
-                      <VBox.margin>
-                          <Insets bottom="3.5" top="3.5" />
-                      </VBox.margin>
-                  </CheckBox>
-                  <CheckBox fx:id="triangularCheckBox" mnemonicParsing="false" text="Triangular">
-                      <VBox.margin>
-                          <Insets bottom="3.5" top="3.5" />
-                      </VBox.margin>
-                  </CheckBox>
-                  <CheckBox fx:id="unitStepCheckBox" mnemonicParsing="false" text="Unit Step">
-                      <VBox.margin>
-                          <Insets bottom="3.5" top="3.5" />
-                      </VBox.margin>
-                  </CheckBox>
-                  <CheckBox fx:id="unitImpulseCheckBox" mnemonicParsing="false" text="Unit Impulse">
-                      <VBox.margin>
-                          <Insets bottom="3.5" top="3.5" />
-                      </VBox.margin>
-                  </CheckBox>
-                  <CheckBox fx:id="impulseNoiseCheckBox" mnemonicParsing="false" text="Impulse Noise">
-                      <VBox.margin>
-                          <Insets bottom="3.5" top="3.5" />
-                      </VBox.margin>
-                  </CheckBox>
-               </children>
-               <HBox.margin>
-                  <Insets left="10.0" />
-               </HBox.margin>
-               <opaqueInsets>
-                  <Insets />
-               </opaqueInsets>
-            </VBox>
             <Pane fx:id="chartPane" maxWidth="1.7976931348623157E308" prefHeight="260.0" prefWidth="840.0" />
          </children>
       </HBox>
    </center>
+   <right>
+      <VBox fx:id="configurationVBox" prefHeight="637.0" prefWidth="500.0" BorderPane.alignment="CENTER" />
+   </right>
 </BorderPane>
