@@ -9,9 +9,10 @@ import java.util.List;
 @AllArgsConstructor
 @SuperBuilder
 public class Signal {
-    int sampleCount;
-    double sampleTime;
-    List<Double> samples;
+    double amplitude;
+    double startTime;
+    double durationTime;
 
+    List<Double> samples;
     SignalType signalType;
 }
