@@ -9,10 +9,37 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.collections.FXCollections?>
+<?import java.lang.String?>
 <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="838.0" prefWidth="1268.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.HelloController">
    <top>
        <AnchorPane prefHeight="69.0" prefWidth="600.0" BorderPane.alignment="CENTER">
-           <MenuButton fx:id="signalMenu" layoutX="911.0" layoutY="22.0" mnemonicParsing="false" text="Signal">
+           <!-- Przyciski akcji (po lewej stronie) -->
+           <Button layoutX="20.0" layoutY="22.0" mnemonicParsing="false" text="Save to file" />
+           <Button layoutX="120.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
+           <Button fx:id="calculateStatsButton" layoutX="240.0" layoutY="22.0" mnemonicParsing="false" text="Calculate Statistics" />
+
+           <!-- Kontrolki histogramu (środek) -->
+           <Label layoutX="400.0" layoutY="22.0" text="Histogram Bins:" />
+           <ComboBox fx:id="histogramBinsComboBox" layoutX="490.0" layoutY="22.0" prefWidth="70.0">
+               <items>
+                   <FXCollections fx:factory="observableArrayList">
+                       <String fx:value="5" />
+                       <String fx:value="10" />
+                       <String fx:value="15" />
+                       <String fx:value="20" />
+                   </FXCollections>
+               </items>
+               <value>
+                   <String fx:value="10" />
+               </value>
+           </ComboBox>
+           <Button fx:id="showHistogramButton" layoutX="570.0" layoutY="22.0" mnemonicParsing="false" text="Show Histogram" />
+
+           <!-- Menu sygnałów i operacji (po prawej stronie) -->
+           <MenuButton fx:id="signalMenu" layoutX="750.0" layoutY="22.0" mnemonicParsing="false" text="Signal">
                <items>
                    <MenuItem fx:id="uniformNoiseMenuItem" text="Uniform Noise" />
                    <MenuItem fx:id="gaussNoiseMenuItem" text="Gauss Noise" />
@@ -27,8 +54,8 @@
                    <MenuItem fx:id="impulseNoiseMenuItem" text="Impulse Noise" />
                </items>
            </MenuButton>
-           
-           <MenuButton fx:id="operationMenu" layoutX="1016.0" layoutY="22.0" text="Operation">
+
+           <MenuButton fx:id="operationMenu" layoutX="850.0" layoutY="22.0" text="Operation">
                <items>
                    <MenuItem fx:id="noneMenuItem" text="None" />
                    <MenuItem fx:id="sumMenuItem" text="Sum" />
@@ -37,11 +64,8 @@
                    <MenuItem fx:id="divideMenuItem" text="Divide" />
                </items>
            </MenuButton>
-           
-           <Button layoutX="243.0" layoutY="22.0" mnemonicParsing="false" text="Save to file" />
-           <Button layoutX="340.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
-           
-           <Button fx:id="generateButton" layoutX="1142.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
+
+           <Button fx:id="generateButton" layoutX="950.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
        </AnchorPane>
    </top>
    <center>

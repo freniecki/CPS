@@ -2,17 +2,19 @@ package cps.fx;
 
 import cps.model.*;
 import javafx.fxml.FXML;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 import java.util.*;
 import java.util.List;
@@ -26,6 +28,7 @@ public class HelloController {
     @FXML private VBox configurationVBox;
     @FXML private Pane chartPane;
     @FXML private Button generateButton;
+    @FXML private Button calculateStatsButton;
 
     @FXML private MenuButton operationMenu;
     @FXML private MenuItem noneMenuItem;
@@ -46,6 +49,8 @@ public class HelloController {
     @FXML private MenuItem unitStepMenuItem;
     @FXML private MenuItem unitImpulseMenuItem;
     @FXML private MenuItem impulseNoiseMenuItem;
+    @FXML private ComboBox<String> histogramBinsComboBox;
+    @FXML private Button showHistogramButton;
 
     @FXML
     private void initialize() {
@@ -58,7 +63,8 @@ public class HelloController {
 
         operationItemList = List.of(noneMenuItem, sumMenuItem, differenceMenuItem, multiplyMenuItem, divideMenuItem);
         operationItemList.forEach(item -> item.setOnAction(e -> operationMenu.setText(item.getText())));
-
+        calculateStatsButton.setOnAction(e -> calculateAndDisplayStatistics());
+        showHistogramButton.setOnAction(e -> showHistogram());
         generateButton.setOnAction(e -> generateChart());
     }
 
@@ -225,4 +231,117 @@ public class HelloController {
             default -> 0;
         };
     }
+
+    private void calculateAndDisplayStatistics() {
+        Map<String, List<String>> mapOfParams = getActiveSignals();
+        if (mapOfParams.isEmpty()) {
+            showAlert("No active signals", "Please select at least one signal to calculate statistics.");
+            return;
+        }
+
+        // Dla każdego aktywnego sygnału oblicz statystyki
+        for (Map.Entry<String, List<String>> entry : mapOfParams.entrySet()) {
+            String signalName = entry.getKey();
+            String type = signalName.split(": ")[1];
+            SignalType signalType = SignalType.valueOf(type);
+            Signal signal = SignalFactory.createSignal(signalType, entry.getValue());
+
+            // Pobierz wszystkie parametry
+            Map<String, Double> parameters = signal.calculateAllParameters();
+
+            // Wyświetl okno z parametrami
+            showStatisticsDialog(signalName, parameters);
+        }
+    }
+    private void showStatisticsDialog(String signalName, Map<String, Double> parameters) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Signal Statistics: " + signalName);
+        dialog.setHeaderText("Parameters for " + signalName);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        int row = 0;
+        for (Map.Entry<String, Double> param : parameters.entrySet()) {
+            grid.add(new Label(param.getKey() + ":"), 0, row);
+            grid.add(new Label(String.format("%.6f", param.getValue())), 1, row);
+            row++;
+        }
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+
+        dialog.showAndWait();
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+    private void showHistogram() {
+        Map<String, List<String>> mapOfParams = getActiveSignals();
+        if (mapOfParams.isEmpty()) {
+            showAlert("No active signals", "Please select at least one signal to show histogram.");
+            return;
+        }
+
+        // Pobierz liczbę przedziałów z ComboBox
+        int numBins = Integer.parseInt(histogramBinsComboBox.getValue());
+
+        // Dla każdego aktywnego sygnału pokaż histogram
+        for (Map.Entry<String, List<String>> entry : mapOfParams.entrySet()) {
+            String signalName = entry.getKey();
+            String type = signalName.split(": ")[1];
+            SignalType signalType = SignalType.valueOf(type);
+            Signal signal = SignalFactory.createSignal(signalType, entry.getValue());
+
+            // Pobierz dane histogramu
+            Map<String, Integer> histogramData = signal.createHistogramData(numBins);
+
+            // Pokaż histogram w nowym oknie
+            showHistogramWindow(signalName, histogramData);
+        }
+    }
+
+    private void showHistogramWindow(String signalName, Map<String, Integer> histogramData) {
+        // Tworzenie nowego okna dla histogramu
+        Stage histogramStage = new Stage();
+        histogramStage.setTitle("Histogram: " + signalName);
+
+        // Tworzenie wykresu słupkowego (BarChart)
+        CategoryAxis xAxis = new CategoryAxis();
+        NumberAxis yAxis = new NumberAxis();
+        xAxis.setLabel("Amplitude Range");
+        yAxis.setLabel("Frequency");
+
+        BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
+        barChart.setTitle("Amplitude Distribution");
+
+        // Tworzenie serii danych
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Frequency");
+
+        // Dodawanie danych do serii
+        for (Map.Entry<String, Integer> bin : histogramData.entrySet()) {
+            series.getData().add(new XYChart.Data<>(bin.getKey(), bin.getValue()));
+        }
+
+        barChart.getData().add(series);
+
+        // Dodanie wykresu do sceny
+        Scene scene = new Scene(barChart, 800, 600);
+        histogramStage.setScene(scene);
+
+        // Pokazanie okna
+        histogramStage.show();
+    }
+
+
+
+
 }
