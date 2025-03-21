@@ -18,13 +18,13 @@
    <top>
        <AnchorPane prefHeight="69.0" prefWidth="600.0" BorderPane.alignment="CENTER">
            <!-- Przyciski akcji (po lewej stronie) -->
-           <Button layoutX="20.0" layoutY="22.0" mnemonicParsing="false" text="Save to file" />
-           <Button layoutX="120.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
-           <Button fx:id="calculateStatsButton" layoutX="963.0" layoutY="22.0" mnemonicParsing="false" text="Calculate Statistics" />
+           <Button layoutX="652.0" layoutY="22.0" mnemonicParsing="false" text="Save to file" />
+           <Button layoutX="768.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
+           <Button fx:id="calculateStatsButton" layoutX="1390.0" layoutY="22.0" mnemonicParsing="false" text="Calculate Statistics" />
 
            <!-- Kontrolki histogramu (środek) -->
-           <Label layoutX="601.0" layoutY="26.0" text="Histogram Bins:" />
-           <ComboBox fx:id="histogramBinsComboBox" layoutX="705.0" layoutY="22.0" prefWidth="70.0">
+           <Label layoutX="1120.0" layoutY="26.0" text="Bins:" />
+           <ComboBox fx:id="histogramBinsComboBox" layoutX="1160.0" layoutY="22.0" prefHeight="26.0" prefWidth="71.0">
                <items>
                    <FXCollections fx:factory="observableArrayList">
                        <String fx:value="5" />
@@ -37,10 +37,10 @@
                    <String fx:value="10" />
                </value>
            </ComboBox>
-           <Button fx:id="showHistogramButton" layoutX="789.0" layoutY="22.0" mnemonicParsing="false" text="Show Histogram" />
+           <Button fx:id="showHistogramButton" layoutX="1241.0" layoutY="22.0" mnemonicParsing="false" text="Show Histogram" />
 
            <!-- Menu sygnałów i operacji (po prawej stronie) -->
-           <MenuButton fx:id="signalMenu" layoutX="1197.0" layoutY="22.0" mnemonicParsing="false" text="Signal">
+           <MenuButton fx:id="signalMenu" layoutX="23.0" layoutY="22.0" mnemonicParsing="false" text="Signal">
                <items>
                    <MenuItem fx:id="uniformNoiseMenuItem" text="Uniform Noise" />
                    <MenuItem fx:id="gaussNoiseMenuItem" text="Gauss Noise" />
@@ -56,7 +56,7 @@
                </items>
            </MenuButton>
 
-           <MenuButton fx:id="operationMenu" layoutX="1287.0" layoutY="22.0" text="Operation">
+           <MenuButton fx:id="operationMenu" layoutX="105.0" layoutY="22.0" text="Operation">
                <items>
                    <MenuItem fx:id="noneMenuItem" text="None" />
                    <MenuItem fx:id="sumMenuItem" text="Sum" />
@@ -66,23 +66,27 @@
                </items>
            </MenuButton>
 
-           <Button fx:id="generateButton" layoutX="1400.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
+           <Button fx:id="generateButton" layoutX="212.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
        </AnchorPane>
    </top>
    <center>
-      <HBox prefHeight="637.0" prefWidth="1036.0" BorderPane.alignment="CENTER">
+      <HBox prefHeight="795.0" prefWidth="600.0" BorderPane.alignment="CENTER">
          <children>
-            <Pane fx:id="chartPane" maxWidth="1.7976931348623157E308" prefHeight="795.0" prefWidth="750.0" />
+            <Pane fx:id="chartPane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="795.0" prefWidth="600.0" />
          </children>
       </HBox>
    </center>
    <left>
-      <VBox fx:id="configurationVBox" prefHeight="637.0" prefWidth="500.0" BorderPane.alignment="CENTER" />
+       <ScrollPane prefHeight="637.0" prefWidth="500.0" BorderPane.alignment="CENTER">
+           <content>
+                <VBox fx:id="configurationVBox" prefHeight="777.0" prefWidth="500.0" BorderPane.alignment="CENTER" />
+           </content>
+       </ScrollPane>
    </left>
    <right>
-      <ScrollPane prefHeight="795.0" prefWidth="286.0" BorderPane.alignment="CENTER">
+      <ScrollPane prefHeight="795.0" prefWidth="436.0" BorderPane.alignment="CENTER">
          <content>
-            <VBox fx:id="statisticsVBox" prefHeight="796.0" prefWidth="286.0" />
+            <VBox fx:id="statisticsVBox" prefHeight="796.0" prefWidth="436.0" />
          </content>
       </ScrollPane>
    </right>
