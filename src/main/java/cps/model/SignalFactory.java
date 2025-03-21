@@ -1,8 +1,6 @@
 package cps.model;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class SignalFactory {
     // przy tworzeniu sygnału okresowego należy ustalić minimalną liczbę próbkowania dla okresu sygnałów okresowych
@@ -42,6 +40,7 @@ public class SignalFactory {
             case UNIT_STEP -> null;
             case UNIT_IMPULS -> null;
             case IMPULSE_NOISE -> null;
+            case CUSTOM -> null;
         };
     }
 
@@ -110,7 +109,28 @@ public class SignalFactory {
                 .build();
     }
 
+    public static Signal createCustomSignal(Map<Double, Double> timeStampSamples) {
+        if (timeStampSamples.isEmpty()) {
+            throw new IllegalArgumentException("zła liczba parametrów");
+        }
+
+        List<Double> timeStamps = new ArrayList<>(timeStampSamples.keySet());
+        Collections.sort(timeStamps);
+        double startTime = timeStamps.getFirst();
+        double durationTime = timeStamps.getLast() - startTime;
+
+        List<Double> samples = new ArrayList<>(timeStampSamples.values());
+
+        return Signal.builder()
+                .startTime(startTime)
+                .durationTime(durationTime)
+                .samples(samples)
+                .signalType(SignalType.CUSTOM)
+                .build();
+    }
+
     public static double getUniformValue(double range) {
         return (Math.random() * 2 - 1) * range;
     }
+
 }
