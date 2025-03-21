@@ -23,10 +23,11 @@ import java.util.logging.Logger;
 public class HelloController {
     private static final Logger logger = Logger.getLogger(HelloController.class.getName());
 
+    @FXML private Pane chartPane;
+    @FXML private VBox statisticsVBox;
+    @FXML private VBox configurationVBox;
     private final List<HBox> rows = new ArrayList<>();
 
-    @FXML private VBox configurationVBox;
-    @FXML private Pane chartPane;
     @FXML private Button generateButton;
     @FXML private Button calculateStatsButton;
 
@@ -67,6 +68,8 @@ public class HelloController {
         showHistogramButton.setOnAction(e -> showHistogram());
         generateButton.setOnAction(e -> generateChart());
     }
+
+    // ---- Signal Config ----
 
     private void addRow(int signalId) {
         SignalType signalType = SignalType.values()[signalId];
@@ -111,6 +114,8 @@ public class HelloController {
         configurationVBox.getChildren().remove(row);
         rows.remove(row);
     }
+
+    // ---- Chart ----
 
     private void generateChart() {
         chartPane.getChildren().clear();
@@ -232,6 +237,8 @@ public class HelloController {
         };
     }
 
+    // ---- Statistics ----
+
     private void calculateAndDisplayStatistics() {
         Map<String, List<String>> mapOfParams = getActiveSignals();
         if (mapOfParams.isEmpty()) {
@@ -250,9 +257,27 @@ public class HelloController {
             Map<String, Double> parameters = signal.calculateAllParameters();
 
             // Wyświetl okno z parametrami
-            showStatisticsDialog(signalName, parameters);
+//            showStatisticsDialog(signalName, parameters);
+            addStatisticsRow(signalName, parameters);
         }
     }
+
+    private void addStatisticsRow(String signalName, Map<String, Double> parameters) {
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        int row = 0;
+        for (Map.Entry<String, Double> param : parameters.entrySet()) {
+            grid.add(new Label(param.getKey() + ":"), 0, row);
+            grid.add(new Label(String.format("%.6f", param.getValue())), 1, row);
+            row++;
+        }
+
+        statisticsVBox.getChildren().add(grid);
+    }
+
     private void showStatisticsDialog(String signalName, Map<String, Double> parameters) {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Signal Statistics: " + signalName);
@@ -276,6 +301,8 @@ public class HelloController {
         dialog.showAndWait();
     }
 
+    // ---- Histogram ----
+
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
@@ -283,6 +310,7 @@ public class HelloController {
         alert.setContentText(message);
         alert.showAndWait();
     }
+
     private void showHistogram() {
         Map<String, List<String>> mapOfParams = getActiveSignals();
         if (mapOfParams.isEmpty()) {
@@ -340,8 +368,4 @@ public class HelloController {
         // Pokazanie okna
         histogramStage.show();
     }
-
-
-
-
 }

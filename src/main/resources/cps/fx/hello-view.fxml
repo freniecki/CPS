@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.collections.FXCollections?>
-<?import java.lang.String?>
-<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="838.0" prefWidth="1268.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.HelloController">
+<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="864.0" prefWidth="1536.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.HelloController">
    <top>
        <AnchorPane prefHeight="69.0" prefWidth="600.0" BorderPane.alignment="CENTER">
            <!-- Przyciski akcji (po lewej stronie) -->
            <Button layoutX="20.0" layoutY="22.0" mnemonicParsing="false" text="Save to file" />
            <Button layoutX="120.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
-           <Button fx:id="calculateStatsButton" layoutX="240.0" layoutY="22.0" mnemonicParsing="false" text="Calculate Statistics" />
+           <Button fx:id="calculateStatsButton" layoutX="963.0" layoutY="22.0" mnemonicParsing="false" text="Calculate Statistics" />
 
            <!-- Kontrolki histogramu (środek) -->
-           <Label layoutX="400.0" layoutY="22.0" text="Histogram Bins:" />
-           <ComboBox fx:id="histogramBinsComboBox" layoutX="490.0" layoutY="22.0" prefWidth="70.0">
+           <Label layoutX="601.0" layoutY="26.0" text="Histogram Bins:" />
+           <ComboBox fx:id="histogramBinsComboBox" layoutX="705.0" layoutY="22.0" prefWidth="70.0">
                <items>
                    <FXCollections fx:factory="observableArrayList">
                        <String fx:value="5" />
@@ -36,10 +37,10 @@
                    <String fx:value="10" />
                </value>
            </ComboBox>
-           <Button fx:id="showHistogramButton" layoutX="570.0" layoutY="22.0" mnemonicParsing="false" text="Show Histogram" />
+           <Button fx:id="showHistogramButton" layoutX="789.0" layoutY="22.0" mnemonicParsing="false" text="Show Histogram" />
 
            <!-- Menu sygnałów i operacji (po prawej stronie) -->
-           <MenuButton fx:id="signalMenu" layoutX="750.0" layoutY="22.0" mnemonicParsing="false" text="Signal">
+           <MenuButton fx:id="signalMenu" layoutX="1197.0" layoutY="22.0" mnemonicParsing="false" text="Signal">
                <items>
                    <MenuItem fx:id="uniformNoiseMenuItem" text="Uniform Noise" />
                    <MenuItem fx:id="gaussNoiseMenuItem" text="Gauss Noise" />
@@ -55,7 +56,7 @@
                </items>
            </MenuButton>
 
-           <MenuButton fx:id="operationMenu" layoutX="850.0" layoutY="22.0" text="Operation">
+           <MenuButton fx:id="operationMenu" layoutX="1287.0" layoutY="22.0" text="Operation">
                <items>
                    <MenuItem fx:id="noneMenuItem" text="None" />
                    <MenuItem fx:id="sumMenuItem" text="Sum" />
@@ -65,17 +66,24 @@
                </items>
            </MenuButton>
 
-           <Button fx:id="generateButton" layoutX="950.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
+           <Button fx:id="generateButton" layoutX="1400.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
        </AnchorPane>
    </top>
    <center>
-      <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+      <HBox prefHeight="637.0" prefWidth="1036.0" BorderPane.alignment="CENTER">
          <children>
-            <Pane fx:id="chartPane" maxWidth="1.7976931348623157E308" prefHeight="260.0" prefWidth="840.0" />
+            <Pane fx:id="chartPane" maxWidth="1.7976931348623157E308" prefHeight="795.0" prefWidth="750.0" />
          </children>
       </HBox>
    </center>
-   <right>
+   <left>
       <VBox fx:id="configurationVBox" prefHeight="637.0" prefWidth="500.0" BorderPane.alignment="CENTER" />
+   </left>
+   <right>
+      <ScrollPane prefHeight="795.0" prefWidth="286.0" BorderPane.alignment="CENTER">
+         <content>
+            <VBox fx:id="statisticsVBox" prefHeight="796.0" prefWidth="286.0" />
+         </content>
+      </ScrollPane>
    </right>
 </BorderPane>
