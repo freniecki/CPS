@@ -11,5 +11,6 @@ public enum SignalType {
     TRIANGLE,
     UNIT_STEP,
     UNIT_IMPULS,
-    IMPULSE_NOISE
+    IMPULSE_NOISE,
+    CUSTOM
 }

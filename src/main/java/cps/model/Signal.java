@@ -1,21 +1,18 @@
 package cps.model;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.util.List;
+import java.util.*;
 
 @Data
 @AllArgsConstructor
-@Getter
-@Setter
-@Builder
+@SuperBuilder
 public class Signal {
-    SignalType signalType;
-    List<Double> samples;
-    Double sampleTime;
-    Double amplitude;
+    double amplitude;
+    double startTime;
+    double durationTime;
 
-    public int getSampleSize() {
-        return samples.size();
-    }
+    List<Double> samples;
+    SignalType signalType;
 }
