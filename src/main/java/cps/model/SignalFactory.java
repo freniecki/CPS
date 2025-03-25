@@ -2,7 +2,10 @@ package cps.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Collections;
+import java.util.logging.Logger;
 
 public class SignalFactory {
     // przy tworzeniu sygnału okresowego należy ustalić minimalną liczbę próbkowania dla okresu sygnałów okresowych
@@ -11,11 +14,10 @@ public class SignalFactory {
 
     // w późniejszym czasie będzie trzeba uwzględnić długość trwania sygnału, aby dla sytuacji t = 100s, T = 2s
     // nie doszło do liczby próbek znacznie przekraczającej wartość użytkową (n = 2500)
-
+    private static final Logger logger = Logger.getLogger(SignalFactory.class.getName());
     private static final Random random = new Random();
 
     public static final double SAMPLE_STEP = 0.01;
-    private static final double AMPLITUDE = 1.0;
 
     private SignalFactory() {
     }
@@ -42,6 +44,7 @@ public class SignalFactory {
             case UNIT_STEP -> createUnitStepSignal(retrievedParams);
             case UNIT_IMPULS -> createUnitImpulseSignal(retrievedParams);
             case IMPULSE_NOISE -> createImpulseNoiseSignal(retrievedParams);
+            case CUSTOM -> null;
         };
     }
 
@@ -303,6 +306,7 @@ public class SignalFactory {
                 .signalType(SignalType.UNIT_IMPULS)
                 .build();
     }
+
     public static Signal createImpulseNoiseSignal(List<Double> params) {
         double amplitude = params.getFirst();
         double startTime = params.get(1);
@@ -331,11 +335,17 @@ public class SignalFactory {
         }
 
         List<Double> timeStamps = new ArrayList<>(timeStampSamples.keySet());
+        logger.info(timeStamps.toString());
         Collections.sort(timeStamps);
-        double startTime = timeStamps.getFirst();
-        double durationTime = timeStamps.getLast() - startTime;
 
-        List<Double> samples = new ArrayList<>(timeStampSamples.values());
+        double startTime = timeStamps.getFirst();
+        logger.info("startTime: " + startTime);
+        double durationTime = timeStamps.getLast() - startTime;
+        logger.info("durationTime: " + durationTime);
+
+        List<Double> samples = new ArrayList<>();
+        for (double timeStamp : timeStamps) samples.add(timeStampSamples.get(timeStamp));
+        logger.info(samples.toString());
 
         return Signal.builder()
                 .startTime(startTime)
