@@ -31,7 +31,7 @@ parametry: amplitude, startTime, duration, period, dutyCycle
 - (S7) sygnał prostokątny symetryczny: RECTANGLE_SYMETRIC  
 - (S8) sygnał trójkątny: TRIANGLE
 
-parametry: to-be-done
+parametry: amplitude, startTime, duration
 - (S9) skok jednostkowy: UNIT_STEP
 - (S10) impuls jednostkowy: UNIT_IMPULS
 - (S11) szum impulsowy: IMPULSE_NOISE
