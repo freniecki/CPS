@@ -20,8 +20,8 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class HelloController {
-    private static final Logger logger = Logger.getLogger(HelloController.class.getName());
+public class Controller {
+    private static final Logger logger = Logger.getLogger(Controller.class.getName());
 
     private final Map<String, Signal> signals = new HashMap<>();
 
