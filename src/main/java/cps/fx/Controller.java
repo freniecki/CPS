@@ -181,18 +181,18 @@ public class Controller {
                 series.getData().add(new XYChart.Data<>(sample.getKey(), sample.getValue()));
             }
 
-            SignalType signalType = SignalType.valueOf(entry.getKey().split(": ")[1]);
-            if (signalType == SignalType.IMPULSE_NOISE || signalType == SignalType.UNIT_IMPULS) {
-                Platform.runLater(() -> series.getNode().setStyle("-fx-stroke: transparent"));
-
-                for (XYChart.Data<Number, Number> data : series.getData()) {
-                    data.nodeProperty().addListener((obs, oldNode, newNode) -> {
-                        if (newNode != null) {
-                            newNode.setStyle("-fx-background-color: white, green; -fx-background-radius: 10px;");
-                        }
-                    });
-                }
-            }
+//            SignalType signalType = SignalType.valueOf(entry.getKey().split(": ")[1]);
+//            if (signalType == SignalType.IMPULSE_NOISE || signalType == SignalType.UNIT_IMPULS) {
+//                Platform.runLater(() -> series.getNode().setStyle("-fx-stroke: transparent"));
+//
+//                for (XYChart.Data<Number, Number> data : series.getData()) {
+//                    data.nodeProperty().addListener((obs, oldNode, newNode) -> {
+//                        if (newNode != null) {
+//                            newNode.setStyle("-fx-background-color: white, green; -fx-background-radius: 10px;");
+//                        }
+//                    });
+//                }
+//            }
 
             series.setName(entry.getKey());
             lineChart.getData().add(series);
