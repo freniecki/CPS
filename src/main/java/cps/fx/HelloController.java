@@ -1,6 +1,7 @@
 package cps.fx;
 
 import cps.model.*;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -106,10 +107,9 @@ public class HelloController {
         HBox paramRow = new HBox();
 
         String[] paramNames = switch (signalType) {
-            case UNIFORM_NOISE, GAUSS_NOISE -> new String[]{"A", "t", "d"};
+            case UNIFORM_NOISE, GAUSS_NOISE, UNIT_STEP, UNIT_IMPULS, IMPULSE_NOISE, CUSTOM -> new String[]{"A", "t", "d"};
             case SINE, SINE_HALF, SINE_FULL -> new String[]{"A", "t", "d", "T"};
             case RECTANGLE, RECTANGLE_SYMETRIC, TRIANGLE -> new String[]{"A", "t", "d", "T", "kw"};
-            case UNIT_STEP, UNIT_IMPULS, IMPULSE_NOISE, CUSTOM -> null;
         };
         for (String s : Objects.requireNonNull(paramNames)) {
             Label label = new Label(s);
@@ -156,7 +156,7 @@ public class HelloController {
         chartPane.getChildren().clear();
         LineChart<Number, Number> lineChart;
 
-        if (operationMenu.getText().equals("None")) {
+        if (operationMenu.getText().equals("None") || operationMenu.getText().equals("Operation")) {
             lineChart = multiChart();
         } else {
             lineChart = aggregatedChart();
@@ -179,6 +179,19 @@ public class HelloController {
 
             for (Map.Entry<Double, Double> sample : entry.getValue().entrySet()) {
                 series.getData().add(new XYChart.Data<>(sample.getKey(), sample.getValue()));
+            }
+
+            SignalType signalType = SignalType.valueOf(entry.getKey().split(": ")[1]);
+            if (signalType == SignalType.IMPULSE_NOISE || signalType == SignalType.UNIT_IMPULS) {
+                Platform.runLater(() -> series.getNode().setStyle("-fx-stroke: transparent"));
+
+                for (XYChart.Data<Number, Number> data : series.getData()) {
+                    data.nodeProperty().addListener((obs, oldNode, newNode) -> {
+                        if (newNode != null) {
+                            newNode.setStyle("-fx-background-color: white, green; -fx-background-radius: 10px;");
+                        }
+                    });
+                }
             }
 
             series.setName(entry.getKey());
@@ -210,6 +223,9 @@ public class HelloController {
         Map<String, Map<Double, Double>> mapOfParams = getActiveSignals();
 
         for (Map.Entry<String, Map<Double, Double>> entry : mapOfParams.entrySet()) {
+            logger.info("name" + entry.getKey());
+            logger.info("" + entry.getValue());
+
             Map<Double, Double> samples = entry.getValue();
             for (Map.Entry<Double, Double> sample : samples.entrySet()) {
                 if (aggregatedSamples.containsKey(sample.getKey())) {
@@ -252,13 +268,13 @@ public class HelloController {
                     signalType = signalLabel.split(": ")[1];
 
                     if (SignalType.valueOf(signalType) == SignalType.CUSTOM) {
-                        Map<Double, Double> samples = activeSamples.get(signalId);
+                        Map<Double, Double> samples = getTimestampSamples(signals.get(signalId));
                         activeSamples.put(signalLabel, samples);
                     } else {
                         var paramHBox = vBox.getChildren().get(1);
                         List<String> params = getParams(paramHBox);
-
-                        Map<Double, Double> timestampSamples = getTimestampSamples(signalType, params);
+                        Signal signal = SignalFactory.createSignal(SignalType.valueOf(signalType), params);
+                        Map<Double, Double> timestampSamples = getTimestampSamples(Objects.requireNonNull(signal));
 
                         activeSamples.put(signalLabel, timestampSamples);
                     }
@@ -280,8 +296,7 @@ public class HelloController {
         return params;
     }
 
-    private Map<Double, Double> getTimestampSamples(String signalType, List<String> params) {
-        Signal signal = SignalFactory.createSignal(SignalType.valueOf(signalType), params);
+    private Map<Double, Double> getTimestampSamples(Signal signal) {
         List<Double> samples = signal.getSamples();
         double sampleStep = SignalFactory.SAMPLE_STEP;
         double startTime = signal.getStartTime();
@@ -373,7 +388,7 @@ public class HelloController {
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         xAxis.setLabel("Amplitude Range");
-        yAxis.setLabel("Frequency");
+        yAxis.setLabel("Density");
 
         BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
         barChart.setTitle("Amplitude Distribution");
