@@ -72,7 +72,7 @@
    <center>
       <HBox prefHeight="795.0" prefWidth="600.0" BorderPane.alignment="CENTER">
          <children>
-            <Pane fx:id="chartPane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="795.0" prefWidth="600.0" />
+            <Pane fx:id="chartPane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="795.0" prefWidth="800.0" />
          </children>
       </HBox>
    </center>
