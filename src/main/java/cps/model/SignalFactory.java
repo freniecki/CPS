@@ -1,7 +1,6 @@
 package cps.model;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 public class SignalFactory {
     // przy tworzeniu sygnału okresowego należy ustalić minimalną liczbę próbkowania dla okresu sygnałów okresowych
@@ -10,7 +9,6 @@ public class SignalFactory {
 
     // w późniejszym czasie będzie trzeba uwzględnić długość trwania sygnału, aby dla sytuacji t = 100s, T = 2s
     // nie doszło do liczby próbek znacznie przekraczającej wartość użytkową (n = 2500)
-    private static final Logger logger = Logger.getLogger(SignalFactory.class.getName());
     private static final Random random = new Random();
 
     public static final double SAMPLE_STEP = 0.01;
@@ -39,9 +37,6 @@ public class SignalFactory {
             return switch (type) {
                 case UNIFORM_NOISE -> createUniformNoise(amplitude, startTime, durationTime);
                 case GAUSS_NOISE -> createGaussNoise(amplitude, startTime, durationTime);
-                case UNIT_IMPULS -> createUnitImpulseSignal(amplitude, startTime, durationTime);
-                case UNIT_STEP -> createUnitStepSignal(amplitude, startTime, durationTime);
-                case IMPULSE_NOISE -> createImpulseNoiseSignal(amplitude, startTime, durationTime);
                 default -> throw new IllegalArgumentException(PARAM_NO_TYPE_ERROR + type);
             };
         } else if (params.size() == 4) {
@@ -50,15 +45,19 @@ public class SignalFactory {
                 case SINE -> createSineSignal(amplitude, startTime, durationTime, period);
                 case SINE_HALF -> createSineHalfSignal(amplitude, startTime, durationTime, period);
                 case SINE_FULL -> createSineFullSignal(amplitude, startTime, durationTime, period);
+                case UNIT_STEP -> createUnitStepSignal(amplitude, startTime, durationTime, period);
                 default -> throw new IllegalArgumentException(PARAM_NO_TYPE_ERROR + type);
             };
         } else if (params.size() == 5) {
             double period = retrievedParams.get(3);
-            double dutyCycle = retrievedParams.get(4);
+            // fifth param is one of [duty cycle, impulseTime, probability]
+            double fifthParam = retrievedParams.get(4);
             return switch (type) {
-                case RECTANGLE -> createRectangleSignal(amplitude, startTime, durationTime, period, dutyCycle);
-                case RECTANGLE_SYMETRIC -> createRectangleSymmetricSignal(amplitude, startTime, durationTime, period, dutyCycle);
-                case TRIANGLE -> createTriangleSignal(amplitude, startTime, durationTime, period, dutyCycle);
+                case RECTANGLE -> createRectangleSignal(amplitude, startTime, durationTime, period, fifthParam);
+                case RECTANGLE_SYMETRIC -> createRectangleSymmetricSignal(amplitude, startTime, durationTime, period, fifthParam);
+                case TRIANGLE -> createTriangleSignal(amplitude, startTime, durationTime, period, fifthParam);
+                case UNIT_IMPULS -> createUnitImpulseSignal(amplitude, startTime, durationTime, period, fifthParam);
+                case IMPULSE_NOISE -> createImpulseNoiseSignal(amplitude, startTime, durationTime, period, fifthParam);
                 default -> throw new IllegalArgumentException(PARAM_NO_TYPE_ERROR + type);
             };
         } else {
@@ -90,6 +89,8 @@ public class SignalFactory {
                 .signalType(SignalType.CUSTOM)
                 .build();
     }
+
+    // ---- CONTINUOUS SIGNALS ----
 
     private static Signal createUniformNoise(double amplitude, double startTime, double durationTime) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
@@ -239,14 +240,16 @@ public class SignalFactory {
                 .build();
     }
 
-    // todo: repair steptime
-    private static Signal createUnitStepSignal(double amplitude, double startTime, double durationTime) {
-        double stepTime = 0.1;
-
+    private static Signal createUnitStepSignal(double amplitude, double startTime, double durationTime, double stepTime) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
         for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
-            double value = (timestamp >= stepTime) ? amplitude : 0;
-            samples.putLast(timestamp, value);
+            if (timestamp < stepTime) {
+                samples.putLast(timestamp, 0.0);
+            } else if (timestamp == stepTime) {
+                samples.putLast(timestamp, amplitude / 2);
+            } else {
+                samples.putLast(timestamp, amplitude);
+            }
         }
 
         return Signal.builder()
@@ -258,14 +261,12 @@ public class SignalFactory {
                 .build();
     }
 
-    //todo: repair impulseTime
-    private static Signal createUnitImpulseSignal(double amplitude, double startTime, double durationTime) {
-        double impulseTime = 0.1;
+    // ---- DISCRETE SIGNALS ----
 
+    private static Signal createUnitImpulseSignal(double amplitude, double startTime, double durationTime, double period, double impulseTime) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
-            // Using a small window for the impulse to make it visible
-            double value = (Math.abs(timestamp - impulseTime) < SAMPLE_STEP / 2) ? amplitude : 0;
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += period) {
+            double value = (timestamp == impulseTime) ? amplitude : 0;
             samples.putLast(timestamp, value);
         }
 
@@ -278,13 +279,9 @@ public class SignalFactory {
                 .build();
     }
 
-    // todo: repair probability
-    private static Signal createImpulseNoiseSignal(double amplitude, double startTime, double durationTime) {
-        double probability = 0.1;
-
+    private static Signal createImpulseNoiseSignal(double amplitude, double startTime, double durationTime, double period, double probability) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
-            // Generate random impulses with given probability
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += period) {
             double value = (random.nextDouble() < probability) ? amplitude : 0;
             samples.putLast(timestamp, value);
         }
@@ -297,6 +294,8 @@ public class SignalFactory {
                 .signalType(SignalType.IMPULSE_NOISE)
                 .build();
     }
+
+    // ---- TOOLS ----
 
     private static double getUniformValue(double range) {
         return (Math.random() * 2 - 1) * range;
