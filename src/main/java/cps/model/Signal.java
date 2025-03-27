@@ -13,6 +13,6 @@ public class Signal {
     double startTime;
     double durationTime;
 
-    List<Double> samples;
+    LinkedHashMap<Double, Double> timestampSamples;
     SignalType signalType;
 }
