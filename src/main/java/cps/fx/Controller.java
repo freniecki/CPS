@@ -1,7 +1,7 @@
 package cps.fx;
 
 import cps.model.*;
-import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -28,7 +28,7 @@ public class Controller {
     @FXML private Pane chartPane;
     @FXML private VBox statisticsVBox;
     @FXML private VBox configurationVBox;
-    private final List<VBox> configurationRows = new ArrayList<>();
+    private final List<VBox> configurationList = new ArrayList<>();
 
     @FXML private Button generateButton;
     @FXML private Button calculateStatsButton;
@@ -68,7 +68,7 @@ public class Controller {
         operationItemList.forEach(item -> item.setOnAction(e -> operationMenu.setText(item.getText())));
 
         calculateStatsButton.setOnAction(e -> calculateAndDisplayStatistics());
-        showHistogramButton.setOnAction(e -> showHistogram());
+        showHistogramButton.setOnAction(e -> calculateAndDisplayHistogram());
 
         generateButton.setOnAction(e -> generateChart());
     }
@@ -85,7 +85,7 @@ public class Controller {
         addParamRow(signalType, configurationRow);
 
         configurationVBox.getChildren().add(configurationRow);
-        configurationRows.add(configurationRow);
+        configurationList.add(configurationRow);
     }
 
     private void addInfoRow(SignalType signalType, VBox configurationRow) {
@@ -95,10 +95,18 @@ public class Controller {
         checkBox.setPadding(new Insets(10));
         infoRow.getChildren().add(checkBox);
 
-        String name = configurationRows.size() + ": " + signalType.name();
-        Label label = new Label(name);
-        label.setPadding(new Insets(10));
-        infoRow.getChildren().add(label);
+        Label idLabel = new Label(String.valueOf(configurationList.size()));
+        idLabel.setPadding(new Insets(10));
+        infoRow.getChildren().add(idLabel);
+
+        Label typeLabel = new Label(signalType.name());
+        typeLabel.setPadding(new Insets(10));
+        infoRow.getChildren().add(typeLabel);
+
+        Button removeButton = new Button("X");
+        removeButton.setOnAction(e -> removeRow(configurationRow));
+        removeButton.setPadding(new Insets(5));
+        infoRow.getChildren().add(removeButton);
 
         configurationRow.getChildren().add(infoRow);
     }
@@ -112,13 +120,21 @@ public class Controller {
             case RECTANGLE, RECTANGLE_SYMETRIC, TRIANGLE -> new String[]{"A", "t", "d", "T", "kw"};
         };
         for (String s : Objects.requireNonNull(paramNames)) {
-            Label label = new Label(s);
-            label.setPadding(new Insets(10));
-            paramRow.getChildren().add(label);
+            if (s.equals("T")) {
+                ComboBox<String> comboBox = new ComboBox<>();
+                comboBox.getItems().add("T");
+                comboBox.getItems().add("f");
+                comboBox.setValue("T");
+                paramRow.getChildren().add(comboBox);
+            } else {
+                Label label = new Label(s);
+                label.setPadding(new Insets(10));
+                paramRow.getChildren().add(label);
+            }
 
             TextField textField = new TextField();
             textField.setPromptText("0.00");
-            textField.setPrefWidth(40);
+            textField.setPrefWidth(60);
             textField.setPadding(new Insets(10));
             textField.textProperty().addListener((obs, oldValue, newValue) -> {
                 if (!newValue.matches("\\d*\\.?\\d*")) {
@@ -128,17 +144,20 @@ public class Controller {
             paramRow.getChildren().add(textField);
         }
 
-        Button removeButton = new Button("X");
-        removeButton.setOnAction(e -> removeRow(configurationRow));
-        removeButton.setPadding(new Insets(5));
-        paramRow.getChildren().add(removeButton);
-
         configurationRow.getChildren().add(paramRow);
     }
 
     private void removeRow(VBox row) {
         configurationVBox.getChildren().remove(row);
-        configurationRows.remove(row);
+        configurationList.remove(row);
+
+        for (int i = 0; i < configurationList.size(); i++) {
+            VBox configurationRow = configurationList.get(i);
+            if (configurationRow.getChildren().getFirst() instanceof HBox infoRow
+                    && infoRow.getChildren().get(1) instanceof Label idLabel) {
+                idLabel.setText(String.valueOf(i));
+            }
+        }
     }
 
     private void addCustomSignal() {
@@ -148,10 +167,11 @@ public class Controller {
         addInfoRow(SignalType.CUSTOM, configurationRow);
 
         configurationVBox.getChildren().add(configurationRow);
-        configurationRows.add(configurationRow);
+        configurationList.add(configurationRow);
     }
 
     // ---- Chart ----
+
     private void generateChart() {
         chartPane.getChildren().clear();
         LineChart<Number, Number> lineChart;
@@ -250,10 +270,15 @@ public class Controller {
         };
     }
 
+    // ---- Signal retriever ----
+
+    /**
+     * Gets map of label and timestamp samples of choosen signals
+    */
     private Map<String, Map<Double, Double>> getActiveSignals() {
         Map<String, Map<Double, Double>> activeSamples = new HashMap<>();
 
-        for (VBox vBox : configurationRows) {
+        for (VBox vBox : configurationList) {
             String signalId;
             String signalType;
             var infoHBox = vBox.getChildren().getFirst();
@@ -261,20 +286,21 @@ public class Controller {
             if (infoHBox instanceof HBox hbox
                     && hbox.getChildren().getFirst() instanceof CheckBox checkBox
                     && checkBox.isSelected()
-                    && hbox.getChildren().get(1) instanceof Label label) {
+                    && hbox.getChildren().get(1) instanceof Label idLabel
+                    && hbox.getChildren().get(2) instanceof Label typeLabel) {
 
-                    String signalLabel = label.getText();
-                    signalId = signalLabel.split(": ")[0];
-                    signalType = signalLabel.split(": ")[1];
+                    signalId = idLabel.getText();
+                    signalType = typeLabel.getText();
+                    String signalLabel = signalId + ": " + signalType;
 
                     if (SignalType.valueOf(signalType) == SignalType.CUSTOM) {
-                        Map<Double, Double> samples = getTimestampSamples(signals.get(signalId));
+                        Map<Double, Double> samples = signals.get(signalId).getTimestampSamples();
                         activeSamples.put(signalLabel, samples);
                     } else {
                         var paramHBox = vBox.getChildren().get(1);
                         List<String> params = getParams(paramHBox);
                         Signal signal = SignalFactory.createSignal(SignalType.valueOf(signalType), params);
-                        Map<Double, Double> timestampSamples = getTimestampSamples(Objects.requireNonNull(signal));
+                        Map<Double, Double> timestampSamples = Objects.requireNonNull(signal).getTimestampSamples();
 
                         activeSamples.put(signalLabel, timestampSamples);
                     }
@@ -282,36 +308,56 @@ public class Controller {
         }
         return activeSamples;
     }
-
+    /**
+     * Gets string params from paramHBox
+     */
     private List<String> getParams(Node paramHBox) {
-        List<String> params = new ArrayList<>();
+        LinkedHashMap<String, String> paramMap = new LinkedHashMap<>();
         if (paramHBox instanceof HBox hBoxParam) {
             var paramRow = hBoxParam.getChildren();
-            for (Node node : paramRow) {
-                if (node instanceof TextField textField) {
-                    params.add(textField.getText());
-                }
+            for (int i = 0; i < paramRow.size(); i += 2) {
+                String label = getParamLabel(paramRow, i);
+                String value = getParamValue(paramRow, i, label);
+
+                paramMap.putLast(label, value);
             }
         }
-        return params;
+        return paramMap.values().stream().toList();
     }
-
-    private Map<Double, Double> getTimestampSamples(Signal signal) {
-        List<Double> samples = signal.getSamples();
-        double sampleStep = SignalFactory.SAMPLE_STEP;
-        double startTime = signal.getStartTime();
-
-        Map<Double, Double> timestampSamples = new HashMap<>();
-        for (int j = 0; j < samples.size(); j++) {
-            double timestamp = startTime + j * sampleStep;
-            timestampSamples.put(timestamp, samples.get(j));
+    /**
+     * Gets label from paramRow
+     */
+    private String getParamLabel(ObservableList<Node> paramRow, int i) {
+        String label;
+        if (paramRow.get(i) instanceof Label labelBox) {
+            label = labelBox.getText();
+        } else if (paramRow.get(i) instanceof ComboBox<?> comboBox) {
+            label = comboBox.getValue().toString();
+        } else {
+            throw new IllegalArgumentException("mamy problem, nie ma label");
         }
-        return timestampSamples;
+        return label;
+    }
+    /**
+     * Gets value from paramRow
+     */
+    private String getParamValue(ObservableList<Node> paramRow, int i, String label) {
+        String value;
+        if (paramRow.get(i + 1) instanceof TextField textField) {
+            if (label.equals("f")) {
+                value = String.valueOf(1 / Double.parseDouble(textField.getText()));
+            } else {
+                value = textField.getText();
+            }
+        } else {
+            throw new IllegalArgumentException("mamy problem, nie ma value");
+        }
+        return value;
     }
 
     private void createNewSignal(Map<Double, Double> aggregatedSamples) {
-        Signal signal = SignalFactory.createCustomSignal(aggregatedSamples);
-        String signalId = String.valueOf(configurationRows.size());
+        Signal signal = SignalFactory.createSignal(aggregatedSamples);
+        String signalId = String.valueOf(configurationList.size());
         signals.put(signalId, signal);
         addCustomSignal();
     }
@@ -325,7 +371,7 @@ public class Controller {
             return;
         }
 
-        if (!Objects.equals(operationMenu.getText(), "None")) {
+        if (!operationMenu.getText().equals("None") && !operationMenu.getText().equals("Operation")) {
             addStatisticsRow(operationMenu.getText(), getAggregatedSamples());
         }
 
@@ -358,7 +404,7 @@ public class Controller {
 
     // ---- Histogram ----
 
-    private void showHistogram() {
+    private void calculateAndDisplayHistogram() {
         Map<String, Map<Double, Double>> mapOfSamples = getActiveSignals();
         if (mapOfSamples.isEmpty()) {
             showAlert("No active signals", "Please select at least one signal to show histogram.");
@@ -367,12 +413,12 @@ public class Controller {
 
         int numBins = Integer.parseInt(histogramBinsComboBox.getValue());
 
-        if (!Objects.equals(operationMenu.getText(), "None")) {
+        if (!operationMenu.getText().equals("None") && !operationMenu.getText().equals("Operation")) {
             String operationMenuText = operationMenu.getText();
             List<Double> cleanSamples = getAggregatedSamples().values().stream().toList();
             Map<String, Integer> histogramData = StatisticTool.createHistogramData(numBins, cleanSamples);
 
-            showHistogramWindow(operationMenuText, histogramData);
+            addHistogramRow(operationMenuText, histogramData);
         }
 
         for (Map.Entry<String, Map<Double, Double>> entry : mapOfSamples.entrySet()) {
@@ -380,11 +426,11 @@ public class Controller {
             List<Double> cleanSamples = entry.getValue().values().stream().toList();
             Map<String, Integer> histogramData = StatisticTool.createHistogramData(numBins, cleanSamples);
 
-            showHistogramWindow(signalName, histogramData);
+            addHistogramRow(signalName, histogramData);
         }
     }
 
-    private void showHistogramWindow(String signalName, Map<String, Integer> histogramData) {
+    private void addHistogramRow(String signalName, Map<String, Integer> histogramData) {
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         xAxis.setLabel("Amplitude Range");
@@ -392,6 +438,8 @@ public class Controller {
 
         BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
         barChart.setTitle("Amplitude Distribution");
+        barChart.setPrefWidth(400);
+        barChart.setMinHeight(300);
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName(signalName);
