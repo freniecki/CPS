@@ -1,10 +1,6 @@
 package cps.model;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Collections;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class SignalFactory {
@@ -18,6 +14,9 @@ public class SignalFactory {
     private static final Random random = new Random();
 
     public static final double SAMPLE_STEP = 0.01;
+    public static final double MIN_PERIOD_SAMPLING_RATE = 20;
+
+    private static final String PARAM_NO_TYPE_ERROR = "No. of param no equals to type: ";
 
     private SignalFactory() {
     }
@@ -32,214 +31,190 @@ public class SignalFactory {
             retrievedParams.add(Double.parseDouble(p));
         }
 
-        return switch (type) {
-            case UNIFORM_NOISE -> createUniformNoise(retrievedParams);
-            case GAUSS_NOISE -> createGaussNoise(retrievedParams);
-            case SINE -> createSineSignal(retrievedParams);
-            case SINE_HALF -> createSineHalfSignal(retrievedParams);
-            case SINE_FULL -> createSineFullSignal(retrievedParams);
-            case RECTANGLE -> createRectangleSignal(retrievedParams);
-            case RECTANGLE_SYMETRIC -> createRectangleSymmetricSignal(retrievedParams);
-            case TRIANGLE -> createTriangleSignal(retrievedParams);
-            case UNIT_STEP -> createUnitStepSignal(retrievedParams);
-            case UNIT_IMPULS -> createUnitImpulseSignal(retrievedParams);
-            case IMPULSE_NOISE -> createImpulseNoiseSignal(retrievedParams);
-            case CUSTOM -> null;
-        };
+        double amplitude = retrievedParams.getFirst();
+        double startTime = retrievedParams.get(1);
+        double durationTime = retrievedParams.get(2);
+
+        if (params.size() == 3) {
+            return switch (type) {
+                case UNIFORM_NOISE -> createUniformNoise(amplitude, startTime, durationTime);
+                case GAUSS_NOISE -> createGaussNoise(amplitude, startTime, durationTime);
+                case UNIT_IMPULS -> createUnitImpulseSignal(amplitude, startTime, durationTime);
+                case UNIT_STEP -> createUnitStepSignal(amplitude, startTime, durationTime);
+                case IMPULSE_NOISE -> createImpulseNoiseSignal(amplitude, startTime, durationTime);
+                default -> throw new IllegalArgumentException(PARAM_NO_TYPE_ERROR + type);
+            };
+        } else if (params.size() == 4) {
+            double period = retrievedParams.get(3);
+            return switch (type) {
+                case SINE -> createSineSignal(amplitude, startTime, durationTime, period);
+                case SINE_HALF -> createSineHalfSignal(amplitude, startTime, durationTime, period);
+                case SINE_FULL -> createSineFullSignal(amplitude, startTime, durationTime, period);
+                default -> throw new IllegalArgumentException(PARAM_NO_TYPE_ERROR + type);
+            };
+        } else if (params.size() == 5) {
+            double period = retrievedParams.get(3);
+            double dutyCycle = retrievedParams.get(4);
+            return switch (type) {
+                case RECTANGLE -> createRectangleSignal(amplitude, startTime, durationTime, period, dutyCycle);
+                case RECTANGLE_SYMETRIC -> createRectangleSymmetricSignal(amplitude, startTime, durationTime, period, dutyCycle);
+                case TRIANGLE -> createTriangleSignal(amplitude, startTime, durationTime, period, dutyCycle);
+                default -> throw new IllegalArgumentException(PARAM_NO_TYPE_ERROR + type);
+            };
+        } else {
+            throw new IllegalArgumentException(PARAM_NO_TYPE_ERROR + type);
+        }
+
     }
 
-    public static Signal createUniformNoise(List<Double> params) {
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
+    public static Signal createSignal(Map<Double, Double> timeStampSamples) {
+        if (timeStampSamples.isEmpty()) {
+            throw new IllegalArgumentException("empty samples");
+        }
 
-        List<Double> samples = new ArrayList<>();
+        List<Double> timeStamps = new ArrayList<>(timeStampSamples.keySet());
+        Collections.sort(timeStamps);
 
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
-            samples.add(getUniformValue(amplitude));
+        double startTime = timeStamps.getFirst();
+        double durationTime = timeStamps.getLast() - startTime;
+
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timeStamp : timeStamps) {
+            samples.putLast(timeStamp, timeStampSamples.get(timeStamp));
+        }
+
+        return Signal.builder()
+                .startTime(startTime)
+                .durationTime(durationTime)
+                .timestampSamples(samples)
+                .signalType(SignalType.CUSTOM)
+                .build();
+    }
+
+    private static Signal createUniformNoise(double amplitude, double startTime, double durationTime) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+            samples.putLast(timestamp, getUniformValue(amplitude));
         }
 
         return Signal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.UNIFORM_NOISE)
                 .build();
     }
 
-    public static Signal createGaussNoise(List<Double> params) {
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
-
-        List<Double> samples = new ArrayList<>();
-
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
-            samples.add(random.nextGaussian() * amplitude);
+    private static Signal createGaussNoise(double amplitude, double startTime, double durationTime) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+            samples.putLast(timestamp,random.nextGaussian() * amplitude);
         }
 
         return Signal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.GAUSS_NOISE)
                 .build();
     }
 
-    public static Signal createSineSignal(List<Double> params) {
-        if (params.size() != 4) {
-            throw new IllegalArgumentException("zła liczba parametrów");
-        }
-
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
-        double period = params.get(3);
-
-        List<Double> samples = new ArrayList<>();
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
-            samples.add(amplitude * Math.sin(2 * Math.PI / period * i));
+    private static Signal createSineSignal(double amplitude, double startTime, double durationTime, double period) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+            samples.putLast(timestamp, amplitude * Math.sin(2 * Math.PI / period * timestamp));
         }
 
         return PeriodicSignal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.SINE)
                 .period(period)
                 .build();
     }
 
-    public static Signal createSineHalfSignal(List<Double> params) {
-        if (params.size() != 4) {
-            throw new IllegalArgumentException("zła liczba parametrów");
-        }
-
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
-        double period = params.get(3);
-
-        List<Double> samples = new ArrayList<>();
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
-            // Formula: x(t) = 0.5 * A * (sin(2π/T(t-t₁)) + |sin(2π/T(t-t₁))|)
-            double sinValue = Math.sin(2 * Math.PI / period * (i - startTime));
+    private static Signal createSineHalfSignal(double amplitude, double startTime, double durationTime, double period) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+            double sinValue = Math.sin(2 * Math.PI / period * (timestamp - startTime));
             double halfRectified = 0.5 * amplitude * (sinValue + Math.abs(sinValue));
-            samples.add(halfRectified);
+            samples.putLast(timestamp, halfRectified);
         }
 
         return PeriodicSignal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.SINE_HALF)
                 .period(period)
                 .build();
     }
 
-    public static Signal createSineFullSignal(List<Double> params) {
-        if (params.size() != 4) {
-            throw new IllegalArgumentException("zła liczba parametrów");
-        }
-
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
-        double period = params.get(3);
-
-        List<Double> samples = new ArrayList<>();
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
+    private static Signal createSineFullSignal(double amplitude, double startTime, double durationTime, double period) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
             // Formula: x(t) = A * |sin(2π/T(t-t₁))|
-            double absValue = Math.abs(Math.sin(2 * Math.PI / period * (i - startTime)));
-            samples.add(amplitude * absValue);
+            double absValue = Math.abs(Math.sin(2 * Math.PI / period * (timestamp - startTime)));
+            samples.putLast(timestamp, amplitude * absValue);
         }
 
         return PeriodicSignal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.SINE_FULL)
                 .period(period)
                 .build();
     }
 
-    public static Signal createRectangleSignal(List<Double> params) {
-        if (params.size() != 5) {
-            throw new IllegalArgumentException("zła liczba parametrów");
-        }
-
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
-        double period = params.get(3);
-        double dutyCycle = params.get(4); // kₚ - współczynnik wypełnienia (0-1)
-
-        List<Double> samples = new ArrayList<>();
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
-            double time = (i - startTime) % period;
+    private static Signal createRectangleSignal(double amplitude, double startTime, double durationTime, double period, double dutyCycle) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+            double time = (timestamp - startTime) % period;
             double value = (time < dutyCycle * period) ? amplitude : 0;
-            samples.add(value);
+            samples.putLast(timestamp, value);
         }
 
         return PolygonalSignal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.RECTANGLE)
                 .period(period)
                 .dutyCycle(dutyCycle)
                 .build();
     }
 
-    public static Signal createRectangleSymmetricSignal(List<Double> params) {
-        if (params.size() != 5) {
-            throw new IllegalArgumentException("zła liczba parametrów");
-        }
-
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
-        double period = params.get(3);
-        double dutyCycle = params.get(4); // kₚ - współczynnik wypełnienia (0-1)
-
-        List<Double> samples = new ArrayList<>();
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
-            double time = (i - startTime) % period;
+    private static Signal createRectangleSymmetricSignal(double amplitude, double startTime, double durationTime, double period, double dutyCycle) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+            double time = (timestamp - startTime) % period;
             double value = (time < dutyCycle * period) ? amplitude : -amplitude;
-            samples.add(value);
+            samples.putLast(timestamp, value);
         }
 
         return PolygonalSignal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.RECTANGLE_SYMETRIC)
                 .period(period)
                 .dutyCycle(dutyCycle)
                 .build();
     }
 
-    public static Signal createTriangleSignal(List<Double> params) {
-        if (params.size() != 5) {
-            throw new IllegalArgumentException("zła liczba parametrów");
-        }
-
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
-        double period = params.get(3);
-        double dutyCycle = params.get(4); // kₚ - współczynnik wypełnienia (0-1)
-
-        List<Double> samples = new ArrayList<>();
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
-            double time = (i - startTime) % period;
+    private static Signal createTriangleSignal(double amplitude, double startTime, double durationTime, double period, double dutyCycle) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+            double time = (timestamp - startTime) % period;
             double value;
 
             if (time < dutyCycle * period) {
@@ -250,112 +225,80 @@ public class SignalFactory {
                 value = amplitude - ((time - dutyCycle * period) / ((1 - dutyCycle) * period)) * amplitude;
             }
 
-            samples.add(value);
+            samples.putLast(timestamp, value);
         }
 
         return PolygonalSignal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.TRIANGLE)
                 .period(period)
                 .dutyCycle(dutyCycle)
                 .build();
     }
 
-    public static Signal createUnitStepSignal(List<Double> params) {
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
-        double stepTime = params.size() > 3 ? params.get(3) : startTime; // Time when step occurs
+    // todo: repair steptime
+    private static Signal createUnitStepSignal(double amplitude, double startTime, double durationTime) {
+        double stepTime = 0.1;
 
-        List<Double> samples = new ArrayList<>();
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
-            double value = (i >= stepTime) ? amplitude : 0;
-            samples.add(value);
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+            double value = (timestamp >= stepTime) ? amplitude : 0;
+            samples.putLast(timestamp, value);
         }
 
         return Signal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.UNIT_STEP)
                 .build();
     }
 
-    public static Signal createUnitImpulseSignal(List<Double> params) {
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
-        double impulseTime = params.size() > 3 ? params.get(3) : startTime; // Time when impulse occurs
+    //todo: repair impulseTime
+    private static Signal createUnitImpulseSignal(double amplitude, double startTime, double durationTime) {
+        double impulseTime = 0.1;
 
-        List<Double> samples = new ArrayList<>();
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
             // Using a small window for the impulse to make it visible
-            double value = (Math.abs(i - impulseTime) < SAMPLE_STEP / 2) ? amplitude : 0;
-            samples.add(value);
+            double value = (Math.abs(timestamp - impulseTime) < SAMPLE_STEP / 2) ? amplitude : 0;
+            samples.putLast(timestamp, value);
         }
 
         return Signal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.UNIT_IMPULS)
                 .build();
     }
 
-    public static Signal createImpulseNoiseSignal(List<Double> params) {
-        double amplitude = params.getFirst();
-        double startTime = params.get(1);
-        double durationTime = params.get(2);
-        double probability = params.size() > 3 ? params.get(3) : 0.1; // Probability of impulse occurrence
+    // todo: repair probability
+    private static Signal createImpulseNoiseSignal(double amplitude, double startTime, double durationTime) {
+        double probability = 0.1;
 
-        List<Double> samples = new ArrayList<>();
-        for (double i = startTime; i < durationTime; i += SAMPLE_STEP) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
             // Generate random impulses with given probability
             double value = (random.nextDouble() < probability) ? amplitude : 0;
-            samples.add(value);
+            samples.putLast(timestamp, value);
         }
 
         return Signal.builder()
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .samples(samples)
+                .timestampSamples(samples)
                 .signalType(SignalType.IMPULSE_NOISE)
                 .build();
     }
 
-    public static Signal createCustomSignal(Map<Double, Double> timeStampSamples) {
-        if (timeStampSamples.isEmpty()) {
-            throw new IllegalArgumentException("zła liczba parametrów");
-        }
-
-        List<Double> timeStamps = new ArrayList<>(timeStampSamples.keySet());
-        logger.info(timeStamps.toString());
-        Collections.sort(timeStamps);
-
-        double startTime = timeStamps.getFirst();
-        logger.info("startTime: " + startTime);
-        double durationTime = timeStamps.getLast() - startTime;
-        logger.info("durationTime: " + durationTime);
-
-        List<Double> samples = new ArrayList<>();
-        for (double timeStamp : timeStamps) samples.add(timeStampSamples.get(timeStamp));
-        logger.info(samples.toString());
-
-        return Signal.builder()
-                .startTime(startTime)
-                .durationTime(durationTime)
-                .samples(samples)
-                .signalType(SignalType.CUSTOM)
-                .build();
-    }
-
-    public static double getUniformValue(double range) {
+    private static double getUniformValue(double range) {
         return (Math.random() * 2 - 1) * range;
     }
 }
