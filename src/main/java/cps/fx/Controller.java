@@ -1,6 +1,7 @@
 package cps.fx;
 
 import cps.model.*;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -11,10 +12,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 
 import java.util.*;
 import java.util.List;
@@ -115,9 +113,13 @@ public class Controller {
         HBox paramRow = new HBox();
 
         String[] paramNames = switch (signalType) {
-            case UNIFORM_NOISE, GAUSS_NOISE, UNIT_STEP, UNIT_IMPULS, IMPULSE_NOISE, CUSTOM -> new String[]{"A", "t", "d"};
+            case UNIFORM_NOISE, GAUSS_NOISE -> new String[]{"A", "t", "d"};
             case SINE, SINE_HALF, SINE_FULL -> new String[]{"A", "t", "d", "T"};
             case RECTANGLE, RECTANGLE_SYMETRIC, TRIANGLE -> new String[]{"A", "t", "d", "T", "kw"};
+            case UNIT_STEP -> new String[]{"A", "t", "d", "s"};
+            case UNIT_IMPULS -> new String[]{"A", "t", "d", "T", "i"};
+            case IMPULSE_NOISE -> new String[]{"A", "t", "d", "T", "p"};
+            case CUSTOM -> throw new IllegalArgumentException("no param for custom signal");
         };
         for (String s : Objects.requireNonNull(paramNames)) {
             if (s.equals("T")) {
@@ -185,7 +187,6 @@ public class Controller {
         lineChart.setLayoutX(0);
         lineChart.setLayoutY(0);
         lineChart.setPrefSize(chartPane.getPrefWidth(), chartPane.getHeight());
-        lineChart.setCreateSymbols(false);
 
         chartPane.getChildren().add(lineChart);
     }
@@ -201,18 +202,20 @@ public class Controller {
                 series.getData().add(new XYChart.Data<>(sample.getKey(), sample.getValue()));
             }
 
-//            SignalType signalType = SignalType.valueOf(entry.getKey().split(": ")[1]);
-//            if (signalType == SignalType.IMPULSE_NOISE || signalType == SignalType.UNIT_IMPULS) {
-//                Platform.runLater(() -> series.getNode().setStyle("-fx-stroke: transparent"));
-//
-//                for (XYChart.Data<Number, Number> data : series.getData()) {
-//                    data.nodeProperty().addListener((obs, oldNode, newNode) -> {
-//                        if (newNode != null) {
-//                            newNode.setStyle("-fx-background-color: white, green; -fx-background-radius: 10px;");
-//                        }
-//                    });
-//                }
-//            }
+            SignalType signalType = SignalType.valueOf(entry.getKey().split(": ")[1]);
+
+            if (signalType == SignalType.IMPULSE_NOISE || signalType == SignalType.UNIT_IMPULS) {
+                Platform.runLater(() -> series.getNode().setStyle("-fx-stroke: transparent"));
+            }
+
+            if (signalType != SignalType.IMPULSE_NOISE && signalType != SignalType.UNIT_IMPULS) {
+                for (XYChart.Data<Number, Number> data : series.getData()) {
+                    Platform.runLater(() -> {
+                        StackPane stackPane = (StackPane) data.getNode();
+                        stackPane.setVisible(false);
+                    });
+                }
+            }
 
             series.setName(entry.getKey());
             lineChart.getData().add(series);
@@ -230,6 +233,13 @@ public class Controller {
 
         for (Map.Entry<Double, Double> entry : aggregatedSamples.entrySet()) {
             series.getData().add(new XYChart.Data<>(entry.getKey(), entry.getValue()));
+        }
+
+        for (XYChart.Data<Number, Number> data : series.getData()) {
+            Platform.runLater(() -> {
+                StackPane stackPane = (StackPane) data.getNode();
+                stackPane.setVisible(false);
+            });
         }
 
         series.setName("wykres");
