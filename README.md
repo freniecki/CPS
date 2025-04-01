@@ -12,10 +12,6 @@ Każdy sygnał/szum można przedstawić za pomocą:
 - funkcji czasu — wartości obieranych przez sygnał w czasie jego trwania 
 - czasu trwania — przedział dziedziny
 
-Dodatkowe parametry:
-- okres podstawowy — dla sygnałów okresowych
-- współczynnik wypełnienia — dla sygnału prostokątnego i trójkątnego 
-
 ## Sygnały i szumy
 parametry: amplitude, startTime, duration 
 - (S1) szum o rozkładzie jednostajnym: UNIFORM_NOISE
@@ -31,8 +27,12 @@ parametry: amplitude, startTime, duration, period, dutyCycle
 - (S7) sygnał prostokątny symetryczny: RECTANGLE_SYMETRIC  
 - (S8) sygnał trójkątny: TRIANGLE
 
-parametry: amplitude, startTime, duration
+parametry: amplitude, startTime, duration, stepTime
 - (S9) skok jednostkowy: UNIT_STEP
+
+parametry: amplitude, startTime, duration, period, impulseTime
 - (S10) impuls jednostkowy: UNIT_IMPULS
+
+parametry: amplitude, startTime, duration, period, probability
 - (S11) szum impulsowy: IMPULSE_NOISE
 

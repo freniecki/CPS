@@ -8,23 +8,20 @@
 <?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="864.0" prefWidth="1536.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.Controller">
    <top>
        <AnchorPane prefHeight="69.0" prefWidth="600.0" BorderPane.alignment="CENTER">
-           <!-- Przyciski akcji (po lewej stronie) -->
-           <Button layoutX="652.0" layoutY="22.0" mnemonicParsing="false" text="Save to file" />
-           <Button layoutX="768.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
-           <Button fx:id="calculateStatsButton" layoutX="1390.0" layoutY="22.0" mnemonicParsing="false" text="Calculate Statistics" />
+           <Button fx:id="readfileButton" layoutX="369.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
+           <Button fx:id="calculateStatsButton" layoutX="1296.0" layoutY="22.0" mnemonicParsing="false" text="Statistics" />
 
-           <!-- Kontrolki histogramu (środek) -->
-           <Label layoutX="1120.0" layoutY="26.0" text="Bins:" />
-           <ComboBox fx:id="histogramBinsComboBox" layoutX="1160.0" layoutY="22.0" prefHeight="26.0" prefWidth="71.0">
+           <Label layoutX="1090.0" layoutY="26.0" text="Bins:" />
+           <ComboBox fx:id="histogramBinsComboBox" layoutX="1126.0" layoutY="22.0" prefHeight="26.0" prefWidth="71.0">
                <items>
                    <FXCollections fx:factory="observableArrayList">
                        <String fx:value="5" />
@@ -37,7 +34,7 @@
                    <String fx:value="10" />
                </value>
            </ComboBox>
-           <Button fx:id="showHistogramButton" layoutX="1241.0" layoutY="22.0" mnemonicParsing="false" text="Show Histogram" />
+           <Button fx:id="showHistogramButton" layoutX="1205.0" layoutY="22.0" mnemonicParsing="false" text="Histogram" />
 
            <!-- Menu sygnałów i operacji (po prawej stronie) -->
            <MenuButton fx:id="signalMenu" layoutX="23.0" layoutY="22.0" mnemonicParsing="false" text="Signal">
@@ -67,15 +64,12 @@
            </MenuButton>
 
            <Button fx:id="generateButton" layoutX="212.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
+         <Button fx:id="clearStatisticsButton" layoutX="1472.0" layoutY="22.0" mnemonicParsing="false" text="Clear" />
+
+           <Label layoutX="670.0" layoutY="26.0" text="Width" />
+           <Slider fx:id="widthSlider" layoutX="726.0" layoutY="27.0" min="800" max="2000" value="800" />
        </AnchorPane>
    </top>
-   <center>
-      <HBox prefHeight="795.0" prefWidth="600.0" BorderPane.alignment="CENTER">
-         <children>
-            <Pane fx:id="chartPane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="795.0" prefWidth="600.0" />
-         </children>
-      </HBox>
-   </center>
    <left>
        <ScrollPane prefHeight="637.0" prefWidth="500.0" BorderPane.alignment="CENTER">
            <content>
@@ -90,4 +84,12 @@
          </content>
       </ScrollPane>
    </right>
+   <center>
+      <ScrollPane fx:id="centerScrollPane" prefHeight="795.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+         <content>
+            <Pane fx:id="chartPane" prefWidth="600" prefHeight="600"/>
+         </content>
+      </ScrollPane>
+       
+   </center>
 </BorderPane>
