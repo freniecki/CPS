@@ -13,6 +13,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
+import javafx.scene.Group;
 import javafx.stage.FileChooser;
 
 import java.io.File;
@@ -58,6 +59,9 @@ public class Controller {
     @FXML private Button readfileButton;
     @FXML private Button clearStatisticsButton;
 
+    @FXML private Slider widthSlider;
+    @FXML private ScrollPane centerScrollPane;
+
     @FXML
     private void initialize() {
         List<MenuItem> signalItemList;
@@ -77,6 +81,18 @@ public class Controller {
 
         readfileButton.setOnAction(e -> readFile());
         clearStatisticsButton.setOnAction(e -> statisticsVBox.getChildren().clear());
+
+        widthSlider.setShowTickMarks(true);
+        widthSlider.setShowTickLabels(true);
+        widthSlider.setMajorTickUnit(400);
+        widthSlider.setMinorTickCount(4);
+        widthSlider.setBlockIncrement(100);
+        widthSlider.valueProperty().addListener((obs, oldVal, newVal)
+                -> logger.info("slider value changed: " + newVal));
+
+        centerScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+        centerScrollPane.setFitToWidth(false);
+        centerScrollPane.setPannable(true);
     }
 
     // ---- Signal read from file ----
@@ -228,11 +244,14 @@ public class Controller {
             lineChart = aggregatedChart();
         }
 
+        logger.info("widthSlider: " + widthSlider.getValue());
+        lineChart.setPrefSize(widthSlider.getValue(), chartPane.getPrefHeight());
+
         lineChart.setLayoutX(0);
         lineChart.setLayoutY(0);
-        lineChart.setPrefSize(chartPane.getPrefWidth(), chartPane.getHeight());
 
         chartPane.getChildren().add(lineChart);
+        centerScrollPane.setContent(new Group(chartPane));
     }
 
     private LineChart<Number, Number> multiChart() {

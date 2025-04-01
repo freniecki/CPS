@@ -8,9 +8,9 @@
 <?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -65,15 +65,11 @@
 
            <Button fx:id="generateButton" layoutX="212.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
          <Button fx:id="clearStatisticsButton" layoutX="1472.0" layoutY="22.0" mnemonicParsing="false" text="Clear" />
+
+           <Label layoutX="670.0" layoutY="26.0" text="Width" />
+           <Slider fx:id="widthSlider" layoutX="726.0" layoutY="27.0" min="800" max="2000" value="800" />
        </AnchorPane>
    </top>
-   <center>
-      <HBox prefHeight="795.0" prefWidth="600.0" BorderPane.alignment="CENTER">
-         <children>
-            <Pane fx:id="chartPane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="795.0" prefWidth="800.0" />
-         </children>
-      </HBox>
-   </center>
    <left>
        <ScrollPane prefHeight="637.0" prefWidth="500.0" BorderPane.alignment="CENTER">
            <content>
@@ -88,4 +84,12 @@
          </content>
       </ScrollPane>
    </right>
+   <center>
+      <ScrollPane fx:id="centerScrollPane" prefHeight="795.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+         <content>
+            <Pane fx:id="chartPane" prefWidth="600" prefHeight="600"/>
+         </content>
+      </ScrollPane>
+       
+   </center>
 </BorderPane>
