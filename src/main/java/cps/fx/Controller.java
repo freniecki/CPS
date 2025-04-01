@@ -13,7 +13,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
@@ -53,6 +55,9 @@ public class Controller {
     @FXML private ComboBox<String> histogramBinsComboBox;
     @FXML private Button showHistogramButton;
 
+    @FXML private Button readfileButton;
+    @FXML private Button clearStatisticsButton;
+
     @FXML
     private void initialize() {
         List<MenuItem> signalItemList;
@@ -69,6 +74,36 @@ public class Controller {
         showHistogramButton.setOnAction(e -> calculateAndDisplayHistogram());
 
         generateButton.setOnAction(e -> generateChart());
+
+        readfileButton.setOnAction(e -> readFile());
+        clearStatisticsButton.setOnAction(e -> statisticsVBox.getChildren().clear());
+    }
+
+    // ---- Signal read from file ----
+
+    private void readFile() {
+        File file = fileChooser();
+        if (file != null) {
+            Signal signal = SignalDao.readSignalFromFile(file.getPath());
+            if (signals.containsValue(signal)) {
+                logger.warning("signal already exists");
+            } else {
+                String signalId = String.valueOf(configurationList.size());
+                signals.put(signalId, signal);
+                addCustomSignal();
+            }
+        } else {
+            logger.warning("no file selected");
+        }
+    }
+
+    private File fileChooser() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Signal Files", "*.ser"));
+
+        return fileChooser.showOpenDialog(null);
     }
 
     // ---- Signal Config ----
@@ -150,9 +185,18 @@ public class Controller {
     }
 
     private void removeRow(VBox row) {
+        if (row.getChildren().getFirst() instanceof HBox infoRow
+                && infoRow.getChildren().get(1) instanceof Label label
+                && infoRow.getChildren().get(2) instanceof Label typeLabel
+                && typeLabel.getText().equals(SignalType.CUSTOM.toString())) {
+            Signal signalRemoved = signals.remove(label.getText());
+            logger.info(signalRemoved.toString());
+        }
+
         configurationVBox.getChildren().remove(row);
         configurationList.remove(row);
 
+        // update ids
         for (int i = 0; i < configurationList.size(); i++) {
             VBox configurationRow = configurationList.get(i);
             if (configurationRow.getChildren().getFirst() instanceof HBox infoRow
@@ -282,9 +326,6 @@ public class Controller {
 
     // ---- Signal retriever ----
 
-    /**
-     * Gets map of label and timestamp samples of choosen signals
-    */
     private Map<String, Map<Double, Double>> getActiveSignals() {
         Map<String, Map<Double, Double>> activeSamples = new HashMap<>();
 
@@ -318,9 +359,7 @@ public class Controller {
         }
         return activeSamples;
     }
-    /**
-     * Gets string params from paramHBox
-     */
+
     private List<String> getParams(Node paramHBox) {
         LinkedHashMap<String, String> paramMap = new LinkedHashMap<>();
         if (paramHBox instanceof HBox hBoxParam) {
@@ -334,9 +373,7 @@ public class Controller {
         }
         return paramMap.values().stream().toList();
     }
-    /**
-     * Gets label from paramRow
-     */
+
     private String getParamLabel(ObservableList<Node> paramRow, int i) {
         String label;
         if (paramRow.get(i) instanceof Label labelBox) {
@@ -348,9 +385,7 @@ public class Controller {
         }
         return label;
     }
-    /**
-     * Gets value from paramRow
-     */
+
     private String getParamValue(ObservableList<Node> paramRow, int i, String label) {
         String value;
         if (paramRow.get(i + 1) instanceof TextField textField) {
@@ -368,7 +403,11 @@ public class Controller {
     private void createNewSignal(Map<Double, Double> aggregatedSamples) {
         Signal signal = SignalFactory.createSignal(aggregatedSamples);
         String signalId = String.valueOf(configurationList.size());
+        // add signal to available signals
         signals.put(signalId, signal);
+        // write new signal to file
+        SignalDao.writeSignalToFile(signal);
+        // add signal to configuration row
         addCustomSignal();
     }
 
