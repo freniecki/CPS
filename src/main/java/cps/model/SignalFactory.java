@@ -10,13 +10,15 @@ public class SignalFactory {
     // w późniejszym czasie będzie trzeba uwzględnić długość trwania sygnału, aby dla sytuacji t = 100s, T = 2s
     // nie doszło do liczby próbek znacznie przekraczającej wartość użytkową (n = 2500)
     private static final Random random = new Random();
-
-    public static final double SAMPLE_STEP = 0.01;
-    public static final double MIN_PERIOD_SAMPLING_RATE = 20;
+    private static double sampleStep = 0.01;
 
     private static final String PARAM_NO_TYPE_ERROR = "No. of param no equals to type: ";
 
     private SignalFactory() {
+    }
+
+    public static void setSampleStep(double sampleStep) {
+        SignalFactory.sampleStep = sampleStep;
     }
 
     public static Signal createSignal(SignalType type, List<String> params) {
@@ -94,7 +96,7 @@ public class SignalFactory {
 
     private static Signal createUniformNoise(double amplitude, double startTime, double durationTime) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
             samples.putLast(timestamp, getUniformValue(amplitude));
         }
 
@@ -109,7 +111,7 @@ public class SignalFactory {
 
     private static Signal createGaussNoise(double amplitude, double startTime, double durationTime) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
             samples.putLast(timestamp,random.nextGaussian() * amplitude);
         }
 
@@ -124,7 +126,7 @@ public class SignalFactory {
 
     private static Signal createSineSignal(double amplitude, double startTime, double durationTime, double period) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
             samples.putLast(timestamp, amplitude * Math.sin(2 * Math.PI / period * timestamp));
         }
 
@@ -140,7 +142,7 @@ public class SignalFactory {
 
     private static Signal createSineHalfSignal(double amplitude, double startTime, double durationTime, double period) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
             double sinValue = Math.sin(2 * Math.PI / period * (timestamp - startTime));
             double halfRectified = 0.5 * amplitude * (sinValue + Math.abs(sinValue));
             samples.putLast(timestamp, halfRectified);
@@ -158,7 +160,7 @@ public class SignalFactory {
 
     private static Signal createSineFullSignal(double amplitude, double startTime, double durationTime, double period) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
             // Formula: x(t) = A * |sin(2π/T(t-t₁))|
             double absValue = Math.abs(Math.sin(2 * Math.PI / period * (timestamp - startTime)));
             samples.putLast(timestamp, amplitude * absValue);
@@ -176,7 +178,7 @@ public class SignalFactory {
 
     private static Signal createRectangleSignal(double amplitude, double startTime, double durationTime, double period, double dutyCycle) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
             double time = (timestamp - startTime) % period;
             double value = (time < dutyCycle * period) ? amplitude : 0;
             samples.putLast(timestamp, value);
@@ -195,7 +197,7 @@ public class SignalFactory {
 
     private static Signal createRectangleSymmetricSignal(double amplitude, double startTime, double durationTime, double period, double dutyCycle) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
             double time = (timestamp - startTime) % period;
             double value = (time < dutyCycle * period) ? amplitude : -amplitude;
             samples.putLast(timestamp, value);
@@ -214,7 +216,7 @@ public class SignalFactory {
 
     private static Signal createTriangleSignal(double amplitude, double startTime, double durationTime, double period, double dutyCycle) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
             double time = (timestamp - startTime) % period;
             double value;
 
@@ -242,7 +244,7 @@ public class SignalFactory {
 
     private static Signal createUnitStepSignal(double amplitude, double startTime, double durationTime, double stepTime) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += SAMPLE_STEP) {
+        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
             if (timestamp < stepTime) {
                 samples.putLast(timestamp, 0.0);
             } else if (timestamp == stepTime) {

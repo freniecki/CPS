@@ -23,6 +23,8 @@ import java.util.logging.Logger;
 
 public class Controller {
     private static final Logger logger = Logger.getLogger(Controller.class.getName());
+    private static final String OPERATION = "Operation";
+    private static final String NONE = "None";
 
     private final Map<String, Signal> signals = new HashMap<>();
 
@@ -164,9 +166,9 @@ public class Controller {
         HBox paramRow = new HBox();
 
         String[] paramNames = switch (signalType) {
-            case UNIFORM_NOISE, GAUSS_NOISE -> new String[]{"A", "t", "d"};
-            case SINE, SINE_HALF, SINE_FULL -> new String[]{"A", "t", "d", "T"};
-            case RECTANGLE, RECTANGLE_SYMETRIC, TRIANGLE -> new String[]{"A", "t", "d", "T", "kw"};
+            case UNIFORM_NOISE, GAUSS_NOISE -> new String[]{"A", "t", "d", "fs"};
+            case SINE, SINE_HALF, SINE_FULL -> new String[]{"A", "t", "d", "T", "fs"};
+            case RECTANGLE, RECTANGLE_SYMETRIC, TRIANGLE -> new String[]{"A", "t", "d", "T", "kw", "fs"};
             case UNIT_STEP -> new String[]{"A", "t", "d", "s"};
             case UNIT_IMPULS -> new String[]{"A", "t", "d", "T", "i"};
             case IMPULSE_NOISE -> new String[]{"A", "t", "d", "T", "p"};
@@ -187,7 +189,7 @@ public class Controller {
 
             TextField textField = new TextField();
             textField.setPromptText("0.00");
-            textField.setPrefWidth(60);
+            textField.setPrefWidth(40);
             textField.setPadding(new Insets(10));
             textField.textProperty().addListener((obs, oldValue, newValue) -> {
                 if (!newValue.matches("\\d*\\.?\\d*")) {
@@ -238,7 +240,7 @@ public class Controller {
         chartPane.getChildren().clear();
         LineChart<Number, Number> lineChart;
 
-        if (operationMenu.getText().equals("None") || operationMenu.getText().equals("Operation")) {
+        if (operationMenu.getText().equals(NONE) || operationMenu.getText().equals(OPERATION)) {
             lineChart = multiChart();
         } else {
             lineChart = aggregatedChart();
@@ -359,27 +361,41 @@ public class Controller {
                     && hbox.getChildren().get(1) instanceof Label idLabel
                     && hbox.getChildren().get(2) instanceof Label typeLabel) {
 
-                    signalId = idLabel.getText();
-                    signalType = typeLabel.getText();
-                    String signalLabel = signalId + ": " + signalType;
+                signalId = idLabel.getText();
+                signalType = typeLabel.getText();
+                String signalLabel = signalId + ": " + signalType;
 
-                    if (SignalType.valueOf(signalType) == SignalType.CUSTOM) {
-                        Map<Double, Double> samples = signals.get(signalId).getTimestampSamples();
-                        activeSamples.put(signalLabel, samples);
-                    } else {
-                        var paramHBox = vBox.getChildren().get(1);
-                        List<String> params = getParams(paramHBox);
-                        Signal signal = SignalFactory.createSignal(SignalType.valueOf(signalType), params);
-                        Map<Double, Double> timestampSamples = Objects.requireNonNull(signal).getTimestampSamples();
-
-                        activeSamples.put(signalLabel, timestampSamples);
-                    }
+                if (SignalType.valueOf(signalType) == SignalType.CUSTOM) {
+                    Map<Double, Double> samples = signals.get(signalId).getTimestampSamples();
+                    activeSamples.put(signalLabel, samples);
+                    continue;
                 }
+
+                var paramHBox = vBox.getChildren().get(1);
+                Map<String, String> params = getParams(paramHBox);
+                logger.info(params.toString());
+
+                if (params.containsKey("fs")) {
+                    double samplingFrequency = Double.parseDouble(params.get("fs"));
+                    if (samplingFrequency == 0) {
+                        throw new IllegalArgumentException("sampling frequency must be positive");
+                    }
+                    double sampleStep = 1 / samplingFrequency;
+                    SignalFactory.setSampleStep(sampleStep);
+
+                    params.remove("fs");
+                }
+
+                Signal signal = SignalFactory.createSignal(SignalType.valueOf(signalType), params.values().stream().toList());
+                Map<Double, Double> timestampSamples = Objects.requireNonNull(signal).getTimestampSamples();
+
+                activeSamples.put(signalLabel, timestampSamples);
+            }
         }
         return activeSamples;
     }
 
-    private List<String> getParams(Node paramHBox) {
+    private Map<String, String> getParams(Node paramHBox) {
         LinkedHashMap<String, String> paramMap = new LinkedHashMap<>();
         if (paramHBox instanceof HBox hBoxParam) {
             var paramRow = hBoxParam.getChildren();
@@ -390,7 +406,7 @@ public class Controller {
                 paramMap.putLast(label, value);
             }
         }
-        return paramMap.values().stream().toList();
+        return paramMap;
     }
 
     private String getParamLabel(ObservableList<Node> paramRow, int i) {
@@ -439,7 +455,7 @@ public class Controller {
             return;
         }
 
-        if (!operationMenu.getText().equals("None") && !operationMenu.getText().equals("Operation")) {
+        if (!operationMenu.getText().equals(NONE) && !operationMenu.getText().equals(OPERATION)) {
             addStatisticsRow(operationMenu.getText(), getAggregatedSamples());
         }
 
@@ -481,7 +497,7 @@ public class Controller {
 
         int numBins = Integer.parseInt(histogramBinsComboBox.getValue());
 
-        if (!operationMenu.getText().equals("None") && !operationMenu.getText().equals("Operation")) {
+        if (!operationMenu.getText().equals(NONE) && !operationMenu.getText().equals(OPERATION)) {
             String operationMenuText = operationMenu.getText();
             List<Double> cleanSamples = getAggregatedSamples().values().stream().toList();
             Map<String, Integer> histogramData = StatisticTool.createHistogramData(numBins, cleanSamples);
