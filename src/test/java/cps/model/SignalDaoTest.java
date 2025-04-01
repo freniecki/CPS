@@ -28,12 +28,6 @@ class SignalDaoTest {
                 .period(1.0)
                 .build();
 
-        try {
-            SignalDao.writeSignalToFile(signal);
-        } catch (IOException e) {
-            System.out.print("no sie nie udało, sorry");
-            throw new RuntimeException(e);
-        }
-
+        SignalDao.writeSignalToFile(signal);
     }
 }
