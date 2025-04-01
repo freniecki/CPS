@@ -189,7 +189,7 @@ public class Controller {
 
             TextField textField = new TextField();
             textField.setPromptText("0.00");
-            textField.setPrefWidth(40);
+            textField.setPrefWidth(60);
             textField.setPadding(new Insets(10));
             textField.textProperty().addListener((obs, oldValue, newValue) -> {
                 if (!newValue.matches("\\d*\\.?\\d*")) {
@@ -524,6 +524,8 @@ public class Controller {
         barChart.setTitle("Amplitude Distribution");
         barChart.setPrefWidth(400);
         barChart.setMinHeight(300);
+        barChart.setBarGap(0.0);
+        barChart.setCategoryGap(0.0);
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName(signalName);
