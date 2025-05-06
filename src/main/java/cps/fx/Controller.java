@@ -534,7 +534,47 @@ public class Controller {
         statisticsVBox.getChildren().add(grid);
     }
 
-    // ---- Histogram ----
+    private void calculateAndDisplayMeasures() {
+        Map<String, Signal> activeSignals = getActiveSignals();
+        if (activeSignals.isEmpty()) {
+            showAlert("No active signals", "Please select at least one signal to calculate statistics.");
+            return;
+        }
+
+        for (Map.Entry<String, Signal> entry : activeSignals.entrySet()) {
+            List<Double> samples = entry.getValue().getTimestampSamples().values().stream().toList();
+            addSignalMeasuresRow(entry.getKey(), samples);
+        }
+    }
+
+    private void addSignalMeasuresRow(String signalName, List<Double> samples) {
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        double MSE = StatisticTool.getRMS(samples);
+        double SNR = StatisticTool.getSNR(samples);
+        double PSNR = StatisticTool.getPSNR(samples);
+        double ENOB = StatisticTool.getENOB(samples);
+        double MD = StatisticTool.getMD(samples);
+
+        grid.add(new Label(signalName), 0, 0);
+        grid.add(new Label("MSE:"), 0, 1);
+        grid.add(new Label(String.format("%.6f", MSE)), 1, 1);
+        grid.add(new Label("SNR:"), 0, 2);
+        grid.add(new Label(String.format("%.2f", SNR)), 1, 2);
+        grid.add(new Label("PSNR:"), 0, 3);
+        grid.add(new Label(String.format("%.2f", PSNR)), 1, 3);
+        grid.add(new Label("ENOB:"), 0, 3);
+        grid.add(new Label(String.format("%.2f", ENOB)), 1, 3);
+        grid.add(new Label("MD:"), 0, 4);
+        grid.add(new Label(String.format("%.6f", MD)), 1, 4);
+
+        statisticsVBox.getChildren().add(grid);
+    }
+
+    // ------------ Histogram ------------
 
     private void calculateAndDisplayHistogram() {
         Map<String, Map<Double, Double>> mapOfSamples = getActiveSignals();
