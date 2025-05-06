@@ -159,6 +159,21 @@ public class Controller {
         removeButton.setPadding(new Insets(5));
         infoRow.getChildren().add(removeButton);
 
+        ChoiceBox<String> quantizationBits = new ChoiceBox<>();
+        quantizationBits.getItems().addAll("1", "2", "3", "4", "5", "6", "7", "8");
+        quantizationBits.setValue("8");
+        infoRow.getChildren().add(quantizationBits);
+
+        ChoiceBox<String> quantizationType = new ChoiceBox<>();
+        quantizationType.getItems().addAll("with cut", "with rounding");
+        quantizationType.setValue("with cut");
+        infoRow.getChildren().add(quantizationType);
+
+        ChoiceBox<String> reconstructionType = new ChoiceBox<>();
+        reconstructionType.getItems().addAll("zero-order hold", "linear", "sinc-based");
+        reconstructionType.setValue("linear");
+        infoRow.getChildren().add(reconstructionType);
+
         configurationRow.getChildren().add(infoRow);
     }
 
