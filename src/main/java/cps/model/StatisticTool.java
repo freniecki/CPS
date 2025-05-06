@@ -1,41 +1,9 @@
 package cps.model;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StatisticTool {
     private StatisticTool() {}
-
-    public static double getMean(List<Double> samples) {
-        if (samples.isEmpty()) {
-            throw new IllegalArgumentException("empty sample list");
-        }
-
-        return samples.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-    }
-
-    public static double getAbsoluteMean(List<Double> samples) {
-        if (samples.isEmpty()) {
-            throw new IllegalArgumentException("empty sample list");
-        }
-        return samples.stream().mapToDouble(Math::abs).average().orElse(0.0);
-    }
-
-    public static double getAveragePower(List<Double> samples) {
-        return samples.stream().mapToDouble(sample -> sample * sample).average().orElse(0.0);
-    }
-
-    public static double getVariance(List<Double> samples) {
-        double mean = getMean(samples);
-
-        return samples.stream().mapToDouble(sample -> sample - mean).map(sample -> sample * sample).average().orElse(0.0);
-    }
-
-    public static double getRMS(List<Double> samples) {
-        return Math.sqrt(getAveragePower(samples));
-    }
 
     public static Map<String, Double> getStatistics(Map<Double, Double> samples) {
         Map<String, Double> stats = new HashMap<>();
@@ -79,5 +47,59 @@ public class StatisticTool {
         }
 
         return histogramData;
+    }
+
+    /* ------------ GENERAL ------------ */
+
+    public static double getSquaredSum(List<Double> samples) {
+        return samples.stream().mapToDouble(sample -> sample * sample).sum();
+    }
+
+    public static double getMean(List<Double> samples) {
+        if (samples.isEmpty()) {
+            throw new IllegalArgumentException("empty sample list");
+        }
+
+        return samples.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+    }
+
+    public static double getAbsoluteMean(List<Double> samples) {
+        if (samples.isEmpty()) {
+            throw new IllegalArgumentException("empty sample list");
+        }
+        return samples.stream().mapToDouble(Math::abs).average().orElse(0.0);
+    }
+
+    public static double getAveragePower(List<Double> samples) {
+        return samples.stream().mapToDouble(sample -> sample * sample).average().orElse(0.0);
+    }
+
+    public static double getVariance(List<Double> samples) {
+        double mean = getMean(samples);
+
+        return samples.stream().mapToDouble(sample -> sample - mean).map(sample -> sample * sample).average().orElse(0.0);
+    }
+
+    public static double getRMS(List<Double> samples) {
+        return Math.sqrt(getAveragePower(samples));
+    }
+
+    /* ------------ SIGNAL SPECIFIC ------------ */
+
+    public static double getSNR(List<Double> samples) {
+        return 10 * Math.log10(StatisticTool.getSquaredSum(samples) / StatisticTool.getRMS(samples));
+    }
+
+    public static double getPSNR(List<Double> samples) {
+        return 10 * Math.log10(Collections.max(samples) / StatisticTool.getAveragePower(samples));
+    }
+
+    public static double getENOB(List<Double> samples) {
+        return (StatisticTool.getSNR(samples) - 1.76) / 6.02;
+    }
+
+    public static double getMD(List<Double> samples) {
+        double mean = StatisticTool.getMean(samples);
+        return Collections.max(samples.stream().map(sample -> Math.abs(sample - mean)).toList());
     }
 }
