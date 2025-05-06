@@ -256,6 +256,54 @@ public class Controller {
         centerScrollPane.setContent(new Group(chartPane));
     }
 
+    private XYChart.Series<Number, Number> createZeroHoldSeries(Map<Double, Double> samples) {
+        XYChart.Series<Number, Number> series = new XYChart.Series<>();
+
+        for (int i = 0; i < samples.size(); i++) {
+            double x0 = (double) samples.keySet().toArray()[i];
+            double x1 = (double) samples.keySet().toArray()[(i+1)%samples.size()];
+            double y = samples.get(x0);
+            series.getData().add(new XYChart.Data<>(x0, y));
+            series.getData().add(new XYChart.Data<>(x1, y));
+        }
+
+        return series;
+    }
+
+    private XYChart.Series<Number, Number> createFirstHoldSeries(Map<Double, Double> samples) {
+        XYChart.Series<Number, Number> series = new XYChart.Series<>();
+        for (Map.Entry<Double, Double> sample : samples.entrySet()) {
+            series.getData().add(new XYChart.Data<>(sample.getKey(), sample.getValue()));
+        }
+        return series;
+    }
+
+    private XYChart.Series<Number, Number> createSincBasedSeries(Map<Double, Double> samples) {
+        List<Map.Entry<Double, Double>> sortedSamples = samples.entrySet().stream().sorted(Comparator.comparingDouble(Map.Entry::getKey)).toList();
+
+        double tMin = sortedSamples.getFirst().getKey();
+        double tMax = sortedSamples.getLast().getKey();
+        int size = sortedSamples.size();
+        double period = (tMax - tMin) / size;
+
+        double interpolationTimeStep = (tMax - tMin) / (5 * size);
+
+        XYChart.Series<Number, Number> series = new XYChart.Series<>();
+        for (double t = tMin; t <= tMax; t += interpolationTimeStep) {
+            double value = 0;
+            for (int n = 0; n < size; n++) {
+                value += sortedSamples.get(n).getValue() * sinc((t - n * period) / period);
+            }
+            series.getData().add(new XYChart.Data<>(t, value));
+        }
+
+        return series;
+    }
+
+    private double sinc(double x) {
+        return Math.sin(Math.PI * x) / (Math.PI * x);
+    }
+
     private LineChart<Number, Number> multiChart() {
         LineChart<Number, Number> lineChart = new LineChart<>(new NumberAxis(), new NumberAxis());
 
