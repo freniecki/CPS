@@ -27,14 +27,16 @@ public class Controller {
     private static final String NONE = "None";
 
     private final Map<String, Signal> signals = new HashMap<>();
+    private final Map<String, String> reconstructions = new HashMap<>();
 
+    private final List<VBox> configurationList = new ArrayList<>();
     @FXML private Pane chartPane;
     @FXML private VBox statisticsVBox;
     @FXML private VBox configurationVBox;
-    private final List<VBox> configurationList = new ArrayList<>();
 
     @FXML private Button generateButton;
     @FXML private Button calculateStatsButton;
+    @FXML private Button calculateMeasuresButton;
 
     @FXML private MenuButton operationMenu;
     @FXML private MenuItem noneMenuItem;
@@ -77,6 +79,7 @@ public class Controller {
         operationItemList.forEach(item -> item.setOnAction(e -> operationMenu.setText(item.getText())));
 
         calculateStatsButton.setOnAction(e -> calculateAndDisplayStatistics());
+        calculateMeasuresButton.setOnAction(e -> calculateAndDisplayMeasures());
         showHistogramButton.setOnAction(e -> calculateAndDisplayHistogram());
 
         generateButton.setOnAction(e -> generateChart());
@@ -97,7 +100,7 @@ public class Controller {
         centerScrollPane.setPannable(true);
     }
 
-    // ---- Signal read from file ----
+    // ------------ Signal read from file ------------
 
     private void readFile() {
         File file = fileChooser();
@@ -124,7 +127,7 @@ public class Controller {
         return fileChooser.showOpenDialog(null);
     }
 
-    // ---- Signal Config ----
+    // ------------ Signal Config ------------
 
     private void addConfigurationRow(int signalId) {
         VBox configurationRow = new VBox();
@@ -140,7 +143,7 @@ public class Controller {
     }
 
     private void addInfoRow(SignalType signalType, VBox configurationRow) {
-        HBox infoRow = new HBox();
+        HBox infoRow = new HBox(5);
 
         CheckBox checkBox = new CheckBox("");
         checkBox.setPadding(new Insets(10));
@@ -165,8 +168,8 @@ public class Controller {
         infoRow.getChildren().add(quantizationBits);
 
         ChoiceBox<String> quantizationType = new ChoiceBox<>();
-        quantizationType.getItems().addAll("with cut", "with rounding");
-        quantizationType.setValue("with cut");
+        quantizationType.getItems().addAll("none", "with cut", "with rounding");
+        quantizationType.setValue("none");
         infoRow.getChildren().add(quantizationType);
 
         ChoiceBox<String> reconstructionType = new ChoiceBox<>();
@@ -202,19 +205,27 @@ public class Controller {
                 paramRow.getChildren().add(label);
             }
 
-            TextField textField = new TextField();
-            textField.setPromptText("0.00");
-            textField.setPrefWidth(60);
-            textField.setPadding(new Insets(10));
-            textField.textProperty().addListener((obs, oldValue, newValue) -> {
-                if (!newValue.matches("\\d*\\.?\\d*")) {
-                    textField.setText(oldValue);
-                }
-            });
-            paramRow.getChildren().add(textField);
+            paramRow.getChildren().add(positiveTextField());
         }
 
         configurationRow.getChildren().add(paramRow);
+    }
+
+    /**
+     * Creates a TextField that accepts only positive numbers
+     * @return the created TextField
+     */
+    private TextField positiveTextField() {
+        TextField textField = new TextField();
+        textField.setPromptText("0.00");
+        textField.setPrefWidth(60);
+        textField.setPadding(new Insets(10));
+        textField.textProperty().addListener((obs, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*\\.?\\d*")) {
+                textField.setText(oldValue);
+            }
+        });
+        return textField;
     }
 
     private void removeRow(VBox row) {
@@ -249,7 +260,7 @@ public class Controller {
         configurationList.add(configurationRow);
     }
 
-    // ---- Chart ----
+    // ------------ Chart ------------
 
     private void generateChart() {
         chartPane.getChildren().clear();
@@ -285,7 +296,7 @@ public class Controller {
         return series;
     }
 
-    private XYChart.Series<Number, Number> createFirstHoldSeries(Map<Double, Double> samples) {
+    private XYChart.Series<Number, Number> createLinearInterpolationSeries(Map<Double, Double> samples) {
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
         for (Map.Entry<Double, Double> sample : samples.entrySet()) {
             series.getData().add(new XYChart.Data<>(sample.getKey(), sample.getValue()));
@@ -293,8 +304,9 @@ public class Controller {
         return series;
     }
 
-    private XYChart.Series<Number, Number> createSincBasedSeries(Map<Double, Double> samples) {
+    public XYChart.Series<Number, Number> createSincBasedSeries(Map<Double, Double> samples) {
         List<Map.Entry<Double, Double>> sortedSamples = samples.entrySet().stream().sorted(Comparator.comparingDouble(Map.Entry::getKey)).toList();
+        logger.info(sortedSamples.toString());
 
         double tMin = sortedSamples.getFirst().getKey();
         double tMax = sortedSamples.getLast().getKey();
@@ -309,28 +321,39 @@ public class Controller {
             for (int n = 0; n < size; n++) {
                 value += sortedSamples.get(n).getValue() * sinc((t - n * period) / period);
             }
+
+            logger.info(String.format("t: %.2f | v: %.2f", t, value));
             series.getData().add(new XYChart.Data<>(t, value));
         }
 
+        logger.info(series.getData().toString());
         return series;
     }
 
     private double sinc(double x) {
+        if (x == 0.0) return 0.0;
         return Math.sin(Math.PI * x) / (Math.PI * x);
     }
 
     private LineChart<Number, Number> multiChart() {
         LineChart<Number, Number> lineChart = new LineChart<>(new NumberAxis(), new NumberAxis());
 
-        Map<String, Map<Double, Double>> mapOfParams = getActiveSignals();
-        for (Map.Entry<String, Map<Double, Double>> entry : mapOfParams.entrySet()) {
-            XYChart.Series<Number, Number> series = new XYChart.Series<>();
+        Map<String, Signal> activeSignals = getActiveSignals();
+        for (Map.Entry<String, Signal> entry : activeSignals.entrySet()) {
+            XYChart.Series<Number, Number> series = switch (reconstructions.get(entry.getKey())) {
+                case "zero-order hold" -> createZeroHoldSeries(entry.getValue().getTimestampSamples());
+                case "linear" -> createLinearInterpolationSeries(entry.getValue().getTimestampSamples());
+                case "sinc-based" -> createSincBasedSeries(entry.getValue().getTimestampSamples());
+                default -> {
+                    XYChart.Series<Number, Number> s = new XYChart.Series<>();
+                    for (Map.Entry<Double, Double> sample : entry.getValue().getTimestampSamples().entrySet()) {
+                        s.getData().add(new XYChart.Data<>(sample.getKey(), sample.getValue()));
+                    }
+                    yield s;
+                }
+            };
 
-            for (Map.Entry<Double, Double> sample : entry.getValue().entrySet()) {
-                series.getData().add(new XYChart.Data<>(sample.getKey(), sample.getValue()));
-            }
-
-            SignalType signalType = SignalType.valueOf(entry.getKey().split(": ")[1]);
+            SignalType signalType = entry.getValue().getSignalType();
 
             if (signalType == SignalType.IMPULSE_NOISE || signalType == SignalType.UNIT_IMPULS) {
                 Platform.runLater(() -> series.getNode().setStyle("-fx-stroke: transparent"));
@@ -345,7 +368,7 @@ public class Controller {
                 }
             }
 
-            series.setName(entry.getKey());
+            series.setName(entry.getKey() + " (" + signalType + ")");
             lineChart.getData().add(series);
         }
         return lineChart;
@@ -378,13 +401,13 @@ public class Controller {
     private Map<Double, Double> getAggregatedSamples() {
         Map<Double, Double> aggregatedSamples = new HashMap<>();
 
-        Map<String, Map<Double, Double>> mapOfParams = getActiveSignals();
+        Map<String, Signal> mapOfParams = getActiveSignals();
 
-        for (Map.Entry<String, Map<Double, Double>> entry : mapOfParams.entrySet()) {
+        for (Map.Entry<String, Signal> entry : mapOfParams.entrySet()) {
             logger.info("name" + entry.getKey());
             logger.info("" + entry.getValue());
 
-            Map<Double, Double> samples = entry.getValue();
+            Map<Double, Double> samples = entry.getValue().getTimestampSamples();
             for (Map.Entry<Double, Double> sample : samples.entrySet()) {
                 if (aggregatedSamples.containsKey(sample.getKey())) {
                     double newValue = countNewValue(aggregatedSamples.get(sample.getKey()), sample.getValue());
@@ -408,54 +431,72 @@ public class Controller {
         };
     }
 
-    // ---- Signal retriever ----
+    // ------------ Signal retriever ------------
 
-    private Map<String, Map<Double, Double>> getActiveSignals() {
-        Map<String, Map<Double, Double>> activeSamples = new HashMap<>();
+    private Map<String, Signal> getActiveSignals() {
+        Map<String, Map<String, String>> activeParams = extractActiveParams();
+
+        Map<String, Signal> activeSignals = new HashMap<>();
+        for (Map.Entry<String, Map<String, String>> entry : activeParams.entrySet()) {
+            String signalId = entry.getKey();
+            Map<String, String> params = entry.getValue();
+            String signalType = params.remove("type");
+
+            if (SignalType.valueOf(signalType) == SignalType.CUSTOM) {
+                activeSignals.put(entry.getKey(), signals.get(signalId));
+                continue;
+            }
+
+            if (params.containsKey("fs")) {
+                double samplingFrequency = Double.parseDouble(params.remove("fs"));
+                if (samplingFrequency == 0) {
+                    throw new IllegalArgumentException("sampling frequency must be positive");
+                }
+                double sampleStep = 1 / samplingFrequency;
+                SignalFactory.setSampleStep(sampleStep);
+            }
+
+            reconstructions.put(signalId, params.remove("reconstruction"));
+
+            Signal signal = SignalFactory.createSignal(SignalType.valueOf(signalType), params);
+            activeSignals.put(entry.getKey(), signal);
+        }
+        
+        return activeSignals;
+    }
+
+    /**
+     * Extracts active signals parameters and returns them
+     * @return Map containing: signalId, params (with type in it)
+     */
+    private Map<String, Map<String, String>> extractActiveParams() {
+        Map<String, Map<String, String>> activeParams = new LinkedHashMap<>();
 
         for (VBox vBox : configurationList) {
-            String signalId;
-            String signalType;
             var infoHBox = vBox.getChildren().getFirst();
 
             if (infoHBox instanceof HBox hbox
                     && hbox.getChildren().getFirst() instanceof CheckBox checkBox
                     && checkBox.isSelected()
                     && hbox.getChildren().get(1) instanceof Label idLabel
-                    && hbox.getChildren().get(2) instanceof Label typeLabel) {
+                    && hbox.getChildren().get(2) instanceof Label typeLabel
+                    && hbox.getChildren().get(4) instanceof ChoiceBox<?> quantizationBits
+                    && hbox.getChildren().get(5) instanceof ChoiceBox<?> quantizationType
+                    && hbox.getChildren().get(6) instanceof ChoiceBox<?> reconstructionType) {
 
-                signalId = idLabel.getText();
-                signalType = typeLabel.getText();
-                String signalLabel = signalId + ": " + signalType;
+                Map<String, String> params = new LinkedHashMap<>();
+                params.put("type", typeLabel.getText());
+                params.putAll(getParams(vBox.getChildren().get(1)));
+                params.put("quantizationBits", (String) quantizationBits.getValue());
+                params.put("quantizationType", (String) quantizationType.getValue());
+                params.put("reconstruction", (String) reconstructionType.getValue());
 
-                if (SignalType.valueOf(signalType) == SignalType.CUSTOM) {
-                    Map<Double, Double> samples = signals.get(signalId).getTimestampSamples();
-                    activeSamples.put(signalLabel, samples);
-                    continue;
-                }
-
-                var paramHBox = vBox.getChildren().get(1);
-                Map<String, String> params = getParams(paramHBox);
+                activeParams.put(idLabel.getText(), params);
                 logger.info(params.toString());
-
-                if (params.containsKey("fs")) {
-                    double samplingFrequency = Double.parseDouble(params.get("fs"));
-                    if (samplingFrequency == 0) {
-                        throw new IllegalArgumentException("sampling frequency must be positive");
-                    }
-                    double sampleStep = 1 / samplingFrequency;
-                    SignalFactory.setSampleStep(sampleStep);
-
-                    params.remove("fs");
-                }
-
-                Signal signal = SignalFactory.createSignal(SignalType.valueOf(signalType), params.values().stream().toList());
-                Map<Double, Double> timestampSamples = Objects.requireNonNull(signal).getTimestampSamples();
-
-                activeSamples.put(signalLabel, timestampSamples);
             }
         }
-        return activeSamples;
+
+        return activeParams;
     }
 
     private Map<String, String> getParams(Node paramHBox) {
@@ -466,6 +507,7 @@ public class Controller {
                 String label = getParamLabel(paramRow, i);
                 String value = getParamValue(paramRow, i, label);
 
+                if (label.equals("f")) label = "T";
                 paramMap.putLast(label, value);
             }
         }
@@ -509,11 +551,11 @@ public class Controller {
         addCustomSignal();
     }
 
-    // ---- Statistics ----
+    // ------------ Statistics ------------
 
     private void calculateAndDisplayStatistics() {
-        Map<String, Map<Double, Double>> mapOfSamples = getActiveSignals();
-        if (mapOfSamples.isEmpty()) {
+        Map<String, Signal> activeSignals = getActiveSignals();
+        if (activeSignals.isEmpty()) {
             showAlert("No active signals", "Please select at least one signal to calculate statistics.");
             return;
         }
@@ -522,8 +564,8 @@ public class Controller {
             addStatisticsRow(operationMenu.getText(), getAggregatedSamples());
         }
 
-        for (Map.Entry<String, Map<Double, Double>> entry : mapOfSamples.entrySet()) {
-            addStatisticsRow(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Signal> entry : activeSignals.entrySet()) {
+            addStatisticsRow(entry.getKey(), entry.getValue().getTimestampSamples());
         }
     }
 
@@ -592,8 +634,8 @@ public class Controller {
     // ------------ Histogram ------------
 
     private void calculateAndDisplayHistogram() {
-        Map<String, Map<Double, Double>> mapOfSamples = getActiveSignals();
-        if (mapOfSamples.isEmpty()) {
+        Map<String, Signal> activeSignals = getActiveSignals();
+        if (activeSignals.isEmpty()) {
             showAlert("No active signals", "Please select at least one signal to show histogram.");
             return;
         }
@@ -608,9 +650,9 @@ public class Controller {
             addHistogramRow(operationMenuText, histogramData);
         }
 
-        for (Map.Entry<String, Map<Double, Double>> entry : mapOfSamples.entrySet()) {
+        for (Map.Entry<String, Signal> entry : activeSignals.entrySet()) {
             String signalName = entry.getKey();
-            List<Double> cleanSamples = entry.getValue().values().stream().toList();
+            List<Double> cleanSamples = entry.getValue().getTimestampSamples().values().stream().toList();
             Map<String, Integer> histogramData = StatisticTool.createHistogramData(numBins, cleanSamples);
 
             addHistogramRow(signalName, histogramData);
@@ -642,7 +684,7 @@ public class Controller {
         statisticsVBox.getChildren().add(barChart);
     }
 
-    // ---- Tools ----
+    // ------------ Tools ------------
 
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
