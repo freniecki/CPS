@@ -26,9 +26,7 @@ public class SignalFactory {
     }
 
     public static Signal createSignal(SignalType type, Map<String, String> params) {
-        List<Double> retrievedParams = getDoubles(params);
-        logger.info(retrievedParams.toString());
-
+        List<Double> retrievedParams = params.values().stream().map(Double::parseDouble).toList();
         double amplitude = retrievedParams.getFirst();
         double startTime = retrievedParams.get(1);
         double durationTime = retrievedParams.get(2);
@@ -65,22 +63,6 @@ public class SignalFactory {
         }
     }
 
-    private static List<Double> getDoubles(Map<String, String> params) {
-        if (params.size() < 5 || params.size() > 7) {
-            throw new IllegalArgumentException("params list size incorrect: " + params.size());
-        }
-
-        Map<String, String> paramsCopy = new HashMap<>(params);
-        SignalFactory.quantizationBits = Integer.parseInt(paramsCopy.remove("quantizationBits"));
-        SignalFactory.quantizationType = paramsCopy.remove("quantizationType");
-
-        List<Double> retrievedParams = paramsCopy.values().stream().map(Double::parseDouble).toList();
-        if (retrievedParams.size() < 3 || retrievedParams.size() > 5) {
-            throw new IllegalArgumentException("retrieved params list size incorrect: " + retrievedParams.size());
-        }
-        return retrievedParams;
-    }
-
     public static Signal createSignal(Map<Double, Double> timeStampSamples) {
         if (timeStampSamples.isEmpty()) {
             throw new IllegalArgumentException("empty samples");
@@ -105,6 +87,25 @@ public class SignalFactory {
                 .build();
     }
 
+    public static Signal createSignalWithQuantization(SignalType type, Map<String, String> params, int quantizationBits, String quantizationType) {
+        SignalFactory.quantizationBits = quantizationBits;
+        SignalFactory.quantizationType = quantizationType;
+
+        if (params.size() < 3 || params.size() > 5) {
+            throw new IllegalArgumentException("retrieved params list size incorrect: " + params.size());
+        }
+
+        return createSignal(type, params);
+    }
+
+    public static Signal createSignalWithQuantization(Signal signal, int quantizationBits, String quantizationType) {
+        Map<Double, Double> timeStampSamples = signal.getTimestampSamples();
+
+        SignalFactory.quantizationBits = quantizationBits;
+        SignalFactory.quantizationType = quantizationType;
+
+        return createSignal(timeStampSamples);
+    }
     // ---- CONTINUOUS SIGNALS ----
 
     private static Signal createUniformNoise(double amplitude, double startTime, double durationTime) {
@@ -319,17 +320,15 @@ public class SignalFactory {
         double step = (max - min) / (levels - 1);
 
         double quantized;
-        if ("none".equalsIgnoreCase(quantizationType)) {
-            quantized = value;
-        } else if ("with cut".equalsIgnoreCase(quantizationType)) {
-            value = Math.clamp(value, min, max);
-            quantized = min + step * (int)((value - min) / step);
-        } else if ("with rounding".equalsIgnoreCase(quantizationType)) {
-            quantized = min + step * Math.round((value - min) / step);
-        } else {
-            throw new IllegalArgumentException("Unsupported quantization type: " + quantizationType);
+        switch (quantizationType) {
+            case "none" -> quantized = value;
+            case "with cut" -> {
+                value = Math.clamp(value, min, max);
+                quantized = min + step * (int)((value - min) / step);
+            }
+            case "with rounding" -> quantized = min + Math.round((value - min) / step) * step;
+            default -> throw new IllegalArgumentException("Unsupported quantization type: " + quantizationType);
         }
-
         return quantized;
     }
 
