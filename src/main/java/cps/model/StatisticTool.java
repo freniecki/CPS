@@ -1,8 +1,12 @@
 package cps.model;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 public class StatisticTool {
+    private static final Logger logger = Logger.getLogger(StatisticTool.class.getName());
+    private static final String MISSING_BASE_SAMPLE = "missing base sample";
+
     private StatisticTool() {}
 
     public static Map<String, Double> getStatistics(Map<Double, Double> samples) {
@@ -86,20 +90,55 @@ public class StatisticTool {
 
     /* ------------ SIGNAL SPECIFIC ------------ */
 
-    public static double getSNR(List<Double> samples) {
-        return 10 * Math.log10(StatisticTool.getSquaredSum(samples) / StatisticTool.getRMS(samples));
+    public static double getMSE(Map<Double, Double> baseSamples, Map<Double, Double> samples) {
+        double sum = 0;
+        for (Map.Entry<Double, Double> sample : samples.entrySet()) {
+            if (!baseSamples.containsKey(sample.getKey())) {
+                logger.warning(MISSING_BASE_SAMPLE);
+                continue;
+            }
+            sum += Math.pow(sample.getValue() - baseSamples.get(sample.getKey()), 2);
+        }
+        return Math.sqrt(sum / samples.size());
     }
 
-    public static double getPSNR(List<Double> samples) {
-        return 10 * Math.log10(Collections.max(samples) / StatisticTool.getAveragePower(samples));
+    public static double getSNR(Map<Double, Double> baseSamples, Map<Double, Double> samples) {
+        double upperSum = 0;
+        double lowerSum = 0;
+        for (Map.Entry<Double, Double> sample : samples.entrySet()) {
+            if (!baseSamples.containsKey(sample.getKey())) {
+                logger.warning(MISSING_BASE_SAMPLE);
+                continue;
+            }
+            upperSum += Math.pow(sample.getValue(), 2);
+            lowerSum += Math.pow(sample.getValue() - baseSamples.get(sample.getKey()), 2);
+        }
+
+        if (lowerSum == 0) {
+            logger.warning("lower sum is zero");
+            return Double.POSITIVE_INFINITY;
+        }
+
+        return 10 * Math.log10(upperSum / lowerSum);
     }
 
-    public static double getENOB(List<Double> samples) {
-        return (StatisticTool.getSNR(samples) - 1.76) / 6.02;
+    public static double getPSNR(Map<Double, Double> baseSamples, Map<Double, Double> samples) {
+        return 10 * Math.log10(Collections.max(samples.values()) / StatisticTool.getMSE(baseSamples, samples));
     }
 
-    public static double getMD(List<Double> samples) {
-        double mean = StatisticTool.getMean(samples);
-        return Collections.max(samples.stream().map(sample -> Math.abs(sample - mean)).toList());
+    public static double getENOB(Map<Double, Double> baseSamples, Map<Double, Double> samples) {
+        return (StatisticTool.getSNR(baseSamples, samples) - 1.76) / 6.02;
+    }
+
+    public static double getMD(Map<Double, Double> baseSamples, Map<Double, Double> samples) {
+        List<Double> differences = new ArrayList<>();
+        for (Map.Entry<Double, Double> sample : samples.entrySet()) {
+            if (!baseSamples.containsKey(sample.getKey())) {
+                logger.warning(MISSING_BASE_SAMPLE);
+                continue;
+            }
+            differences.add(Math.abs(sample.getValue() - baseSamples.get(sample.getKey())));
+        }
+        return Collections.max(differences);
     }
 }
