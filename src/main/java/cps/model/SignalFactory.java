@@ -4,12 +4,6 @@ import java.util.*;
 import java.util.logging.Logger;
 
 public class SignalFactory {
-    // przy tworzeniu sygnału okresowego należy ustalić minimalną liczbę próbkowania dla okresu sygnałów okresowych
-    // częstotliwość próbkowania niech będzie 50 próbek na okres dla ładnego zarysowania kształtu naszego sygnału
-    // np. dla t = 5s oraz T = 2s -> t_i = T / 50 = 0.04 s
-
-    // w późniejszym czasie będzie trzeba uwzględnić długość trwania sygnału, aby dla sytuacji t = 100s, T = 2s
-    // nie doszło do liczby próbek znacznie przekraczającej wartość użytkową (n = 2500)
     private static final Logger logger = Logger.getLogger(String.valueOf(SignalFactory.class));
     private static final Random random = new Random();
     private static double sampleStep = 0.01;
@@ -106,6 +100,22 @@ public class SignalFactory {
 
         return createSignal(timeStampSamples);
     }
+
+    public static Signal createNewFromSamplingExistingOne(Signal signal, double sampleRate) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = signal.getStartTime(); timestamp < signal.getStartTime() + signal.getDurationTime(); timestamp += sampleRate) {
+            samples.putLast(timestamp, signal.getTimestampSamples().get(timestamp));
+        }
+
+        return Signal.builder()
+                .amplitude(signal.getAmplitude())
+                .startTime(signal.getStartTime())
+                .durationTime(signal.getDurationTime())
+                .timestampSamples(quantizeSamples(samples))
+                .signalType(signal.getSignalType())
+                .build();
+    }
+
     // ---- CONTINUOUS SIGNALS ----
 
     private static Signal createUniformNoise(double amplitude, double startTime, double durationTime) {
@@ -140,9 +150,7 @@ public class SignalFactory {
 
     private static Signal createSineSignal(double amplitude, double startTime, double durationTime, double period) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
-            // create uniformly quantized signal
-
+        for (double timestamp = startTime; timestamp <= startTime + durationTime; timestamp += sampleStep) {
             samples.putLast(timestamp, amplitude * Math.sin(2 * Math.PI / period * timestamp));
         }
 

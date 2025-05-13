@@ -337,7 +337,7 @@ public class Controller {
         String signalId = String.valueOf(signalsObjects.size());
         Signal signal = activeSignals.values().iterator().next();
         logger.info("Signal: " + signal.toString());
-        Signal newSignal = SignalFactory.doSomeShit(signal, sampleRate);
+        Signal newSignal = SignalFactory.createNewFromSamplingExistingOne(signal, sampleRate);
         logger.info("new signal: " + newSignal.toString());
         signalsObjects.put(signalId, newSignal);
 
