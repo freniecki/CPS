@@ -9,6 +9,7 @@
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Pane?>
@@ -33,7 +34,9 @@
                     <MenuItem fx:id="impulseNoiseMenuItem" text="Impulse Noise" />
                 </items>
             </MenuButton>
-            <MenuButton fx:id="operationMenu" layoutX="105.0" layoutY="22.0" text="Operation">
+            <Button fx:id="createSignalButton" layoutX="104.0" layoutY="22.0" mnemonicParsing="false" text="Create" />
+
+            <MenuButton fx:id="operationMenu" layoutX="227.0" layoutY="22.0" text="Operation">
                 <items>
                     <MenuItem fx:id="noneMenuItem" text="None" />
                     <MenuItem fx:id="sumMenuItem" text="Sum" />
@@ -42,13 +45,17 @@
                     <MenuItem fx:id="divideMenuItem" text="Divide" />
                 </items>
             </MenuButton>
-            <Button fx:id="generateButton" layoutX="212.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
+            <Button fx:id="generateButton" layoutX="333.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
+
+            <Label layoutX="487.0" layoutY="26.0" text="fs" />
+            <TextField fx:id="sampleTextField" layoutX="504.0" layoutY="22.0" prefHeight="26.0" prefWidth="54.0" />
+            <Button fx:id="sampleButton" layoutX="564.0" layoutY="22.0" mnemonicParsing="false" text="Sample" />
 
             <!-- ŚRODEK -->
-            <Button fx:id="readfileButton" layoutX="640.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
+            <Button fx:id="readFileButton" layoutX="640.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
 
             <Label layoutX="797.0" layoutY="26.0" text="Width" />
-            <Slider fx:id="widthSlider" layoutX="880.0" layoutY="27.0" max="2000" min="800" value="800" />
+            <Slider fx:id="widthSlider" layoutX="880.0" layoutY="27.0" max="3000" min="800" value="800" />
 
             <!-- PRAWA STRONA -->
             <Label layoutX="1090.0" layoutY="26.0" text="Bins:" />
@@ -70,17 +77,21 @@
             <Button fx:id="calculateMeasuresButton" layoutX="1376.0" layoutY="22.0" mnemonicParsing="false" text="Measures" />
 
             <Button fx:id="clearStatisticsButton" layoutX="1472.0" layoutY="22.0" mnemonicParsing="false" text="Clear" />
+
         </AnchorPane>
     </top>
     <left>
-        <ScrollPane prefHeight="637.0" prefWidth="500.0" BorderPane.alignment="CENTER">
-            <content>
-                <VBox fx:id="configurationVBox" prefHeight="777.0" prefWidth="500.0" BorderPane.alignment="CENTER" />
-            </content>
-        </ScrollPane>
+        <VBox prefWidth="550.0">
+            <VBox fx:id="paramPane" prefHeight="100.0" prefWidth="200.0" />
+            <ScrollPane prefHeight="637.0" prefWidth="500.0" BorderPane.alignment="CENTER" VBox.vgrow="ALWAYS">
+                <content>
+                    <VBox fx:id="signalsUIList" prefHeight="778.0" prefWidth="500.0" BorderPane.alignment="CENTER" />
+                </content>
+            </ScrollPane>
+        </VBox>
     </left>
     <right>
-        <ScrollPane prefHeight="795.0" prefWidth="436.0" BorderPane.alignment="CENTER">
+        <ScrollPane prefHeight="795.0" prefWidth="400.0" BorderPane.alignment="CENTER">
             <content>
                 <VBox fx:id="statisticsVBox" prefHeight="796.0" prefWidth="436.0" />
             </content>
