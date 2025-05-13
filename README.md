@@ -36,3 +36,6 @@ parametry: amplitude, startTime, duration, period, impulseTime
 parametry: amplitude, startTime, duration, period, probability
 - (S11) szum impulsowy: IMPULSE_NOISE
 
+## TODOs:
+- **ZADANIE 3**:
+  - o1, f2
