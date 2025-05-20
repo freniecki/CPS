@@ -1,6 +1,7 @@
 package cps.model;
 
 import java.util.*;
+import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
 
 public class SignalFactory {
@@ -116,7 +117,7 @@ public class SignalFactory {
                 .build();
     }
 
-    // ---- CONTINUOUS SIGNALS ----
+    // ======== CONTINUOUS SIGNALS ========
 
     private static Signal createUniformNoise(double amplitude, double startTime, double durationTime) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
@@ -287,7 +288,7 @@ public class SignalFactory {
                 .build();
     }
 
-    // ---- DISCRETE SIGNALS ----
+    // ======== DISCRETE SIGNALS ========
 
     private static Signal createUnitImpulseSignal(double amplitude, double startTime, double durationTime, double period, double impulseTime) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
@@ -321,7 +322,7 @@ public class SignalFactory {
                 .build();
     }
 
-    // ---- TOOLS ----
+    // ======== TOOLS ========
 
     private static double quantize(double value, double min, double max) {
         int levels = (int) Math.pow(2, quantizationBits);
@@ -353,5 +354,138 @@ public class SignalFactory {
 
     private static double getUniformValue(double range) {
         return (Math.random() * 2 - 1) * range;
+    }
+
+    // ======== CONVOLUTION ========
+
+    /**
+     * Implementation of convolution operation on discrete sets of numbers. Algorithm is
+     * based on 'Input-side algorithm' with O(s1.size() * s2.size()) complexity.
+     * Equation: (h * x)(n) = sum {h(k) * x(n - k)}
+     *
+     * @param s1 List of 1st signal's values
+     * @param s2 List of 2nd signal's values
+     * @return Product of convolution
+     */
+    public static List<Double> convolve(List<Double> s1, List<Double> s2) {
+        logger.info("s1: " + s1);
+        logger.info("s2: " + s2);
+
+        int productSize = s1.size() + s2.size() - 1;
+        List<Double> product = new ArrayList<>(Collections.nCopies(productSize, 0.0));
+
+        for (int k = 0; k < s1.size(); k++) {
+            for (int i = 0; i < s2.size(); i++) {
+                double s1value = s1.get(k);
+                double s2value = s2.get(i);
+                double value = product.get(k + i) + s1value * s2value;
+                product.set(k + i, value);
+                logger.info("k: %s | i: %s | product: %s".formatted(k, i, product));
+            }
+        }
+
+        logger.info("product: " + product);
+        return product;
+    }
+
+    // ======== FILTRATION ========
+
+    /**
+     * Implementation of filter on discrete set using FIR filter (pl. SOI).
+     * Filtration product is a convolution of signal and filter.
+     * Filtered samples are cut to the size of original signal.
+     * @param signal Signal object containing discrete set of samples.
+     * @param M No. of coefficients in FIR.
+     * @param cutoffFrequency Cut-off frequency of filter, required smaller than half of sampling frequency.
+     * @return New signal object containing filtered samples.
+     */
+    public Signal firFiltration(Signal signal, int M, double cutoffFrequency,
+                                UnaryOperator<List<Double>> coefficientsModifier) {
+        List<Double> timestamps = signal.getTimestampSamples().keySet().stream().toList();
+        List<Double> samples = signal.getTimestampSamples().values().stream().toList();
+
+        double samplingFrequency = signal.getTimestampSamples().size() / signal.getDurationTime();
+        double K = samplingFrequency / cutoffFrequency;
+        List<Double> coefficients = createFIRCoefficients(M, K);
+
+        List<Double> modifiedCoefficients = coefficientsModifier.apply(coefficients);
+
+        List<Double> product = convolve(samples, modifiedCoefficients);
+
+        LinkedHashMap<Double, Double> filteredSamples = new LinkedHashMap<>();
+        for (int i = 0; i < timestamps.size(); i++) {
+            // get only the number of samples that are related to timestamps
+            filteredSamples.put(timestamps.get(i), product.get(i));
+        }
+
+        return SignalFactory.createSignal(filteredSamples);
+    }
+
+    /**
+     * Low pass filtration on discrete set using FIR. 
+     * @param signal Signal object containing discrete set of samples.
+     * @param M No. of coefficients in FIR.
+     * @param cutoffFrequency Cut-off frequency of filter, required smaller than half of sampling frequency.
+     * @return Signal object with filtered samples.
+     */
+    public Signal lowPassFIRFiltration(Signal signal, int M, double cutoffFrequency) {
+        return firFiltration(signal, M, cutoffFrequency, coefficients -> coefficients);
+    }
+
+    /**
+     * High pass filtration on discrete set using FIR. Difference to low pass 
+     * is that coefficients are modified by multiplying them by s(n) = (-1)^n. 
+     * @param signal Signal object containing discrete set of samples.
+     * @param M No. of coefficients in FIR.
+     * @param cutoffFrequency Cut-off frequency of filter, required smaller than half of sampling frequency.
+     * @return Signal object with filtered samples.
+     */
+    public Signal highPassFIRFiltration(Signal signal, int M, double cutoffFrequency) {
+        return firFiltration(signal, M, cutoffFrequency, coefficients -> {
+            List<Double> modifiedCoefficients = new ArrayList<>();
+            for (int n = 0; n < coefficients.size(); n++) {
+                modifiedCoefficients.add(coefficients.get(n) * Math.pow(-1, n));
+            }
+            return modifiedCoefficients;
+        });
+    }
+
+    /**
+     * Creates coefficients for FIR filter. Value of each is product of sinc function and given window.
+     * @param M No. of coefficients in FIR.
+     * @param K Relation between sampling frequency and cut-off frequency.
+     * @return List of coefficients.
+     */
+    public static List<Double> createFIRCoefficients(int M, double K) {
+        List<Double> coefficients = new ArrayList<>();
+        for (int i = 0; i < M; i++) {
+            double value = coefficient(i, M, K) * hammingWindow(i, M);
+            coefficients.add(value);
+        }
+        return coefficients;
+    }
+
+    /**
+     * Helper method to calculate coefficient at given index.
+     * @param n No. of current sample.
+     * @param M No. of coefficients in FIR.
+     * @param K Relation between sampling frequency and cut-off frequency.
+     * @return FIR coefficient at index n.
+     */
+    private static double coefficient(int n, int M, double K) {
+        double state = (M - 1) / 2.0;
+
+        if (n == state) {
+            return 2 / K;
+        }
+
+        double licznik = Math.sin(2 * Math.PI * (n - state) / K);
+        double mianownik = Math.PI * (n - state);
+        return licznik / mianownik;
+    }
+
+
+    public static double hammingWindow(int n, int M) {
+        return 0.53836 - 0.46164 * Math.cos(2 * Math.PI * n / M);
     }
 }
