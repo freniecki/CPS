@@ -22,7 +22,7 @@ public class SignalDao {
     }
 
     public static void writeSignalToFile(Signal signal) {
-        String pathString = "signals/" + LocalDate.now() + "_" + LocalTime.now() + ".ser";
+        String pathString = "resources/signals/" + LocalDate.now() + "_" + LocalTime.now() + ".ser";
 
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(pathString))) {
             objectOutputStream.writeObject(signal);
