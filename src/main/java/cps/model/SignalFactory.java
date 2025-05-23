@@ -356,6 +356,9 @@ public class SignalFactory {
         return (Math.random() * 2 - 1) * range;
     }
 
+    // =====================================================================
+    // =====================================================================
+
     // ======== CONVOLUTION ========
 
     /**
@@ -388,6 +391,29 @@ public class SignalFactory {
         return product;
     }
 
+    // ======== CROSS-CORRELATION ========
+
+    public static List<Double> crossCorrelate(List<Double> s1, List<Double> s2) {
+        logger.info("s1: " + s1);
+        logger.info("s2: " + s2);
+
+        int productSize = s1.size() + s2.size() - 1;
+        List<Double> product = new ArrayList<>(Collections.nCopies(productSize, 0.0));
+
+        for (int k = 0; k < s1.size(); k++) {
+            for (int i = s2.size() - 1; i >= 0; i--) {
+                double s1value = s1.get(k);
+                double s2value = s2.get(i);
+                double value = product.get(k + i) + s1value * s2value;
+                product.set(k + i, value);
+                logger.info("k: %s | i: %s | product: %s".formatted(k, i, product));
+            }
+        }
+
+        logger.info("product: " + product);
+        return product;
+    }
+
     // ======== FILTRATION ========
 
     /**
@@ -399,7 +425,7 @@ public class SignalFactory {
      * @param cutoffFrequency Cut-off frequency of filter, required smaller than half of sampling frequency.
      * @return New signal object containing filtered samples.
      */
-    public Signal firFiltration(Signal signal, int M, double cutoffFrequency,
+    private static Signal firFiltration(Signal signal, int M, double cutoffFrequency,
                                 UnaryOperator<List<Double>> coefficientsModifier) {
         List<Double> timestamps = signal.getTimestampSamples().keySet().stream().toList();
         List<Double> samples = signal.getTimestampSamples().values().stream().toList();
@@ -428,7 +454,7 @@ public class SignalFactory {
      * @param cutoffFrequency Cut-off frequency of filter, required smaller than half of sampling frequency.
      * @return Signal object with filtered samples.
      */
-    public Signal lowPassFIRFiltration(Signal signal, int M, double cutoffFrequency) {
+    public static Signal lowPassFIRFiltration(Signal signal, int M, double cutoffFrequency) {
         return firFiltration(signal, M, cutoffFrequency, coefficients -> coefficients);
     }
 
@@ -440,7 +466,7 @@ public class SignalFactory {
      * @param cutoffFrequency Cut-off frequency of filter, required smaller than half of sampling frequency.
      * @return Signal object with filtered samples.
      */
-    public Signal highPassFIRFiltration(Signal signal, int M, double cutoffFrequency) {
+    public static Signal highPassFIRFiltration(Signal signal, int M, double cutoffFrequency) {
         return firFiltration(signal, M, cutoffFrequency, coefficients -> {
             List<Double> modifiedCoefficients = new ArrayList<>();
             for (int n = 0; n < coefficients.size(); n++) {
@@ -484,7 +510,12 @@ public class SignalFactory {
         return licznik / mianownik;
     }
 
-
+    /**
+     * Implementation of Hamming window. Calculates value at given index.
+     * @param n No. of current sample
+     * @param M No. of coefficients in FIR
+     * @return Value of Hamming window.
+     */
     public static double hammingWindow(int n, int M) {
         return 0.53836 - 0.46164 * Math.cos(2 * Math.PI * n / M);
     }
