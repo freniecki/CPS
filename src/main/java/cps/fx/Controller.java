@@ -1,6 +1,7 @@
 package cps.fx;
 
 import cps.model.*;
+import cps.simulator.SondaCore;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -29,8 +30,15 @@ public class Controller {
     private final Map<String, Signal> signalsObjects = new LinkedHashMap<>();
     private final Map<String, String> reconstructions = new HashMap<>();
 
-    @FXML private TextField sampleTextField;
-    @FXML private Button sampleButton;
+    @FXML public TextField cutoffFrequencyTextField;
+    @FXML public TextField mParameterTextField;
+    @FXML public ChoiceBox<String> filtrateChoiceBox;
+    @FXML public Button filtrateButton;
+
+    @FXML public TextField distanceTextField;
+    @FXML public TextField signalVelocityTextField;
+    @FXML public TextField bufferSizeTextField;
+    @FXML public Button startSondaButton;
 
     @FXML private VBox signalsUIList;
     @FXML private Pane chartPane;
@@ -106,7 +114,83 @@ public class Controller {
         centerScrollPane.setFitToWidth(false);
         centerScrollPane.setPannable(true);
 
-        sampleButton.setOnAction(e -> sampleExistingSignal());
+        filtrateButton.setOnAction(e -> filtrate());
+
+        startSondaButton.setOnAction(e -> startSonda());
+    }
+
+    // ------------ Sonda ------------
+
+    private void startSonda() {
+        Map<String, Signal> activeSignals = getOneActiveSignal();
+
+        if (distanceTextField.getText().isEmpty()
+                || signalVelocityTextField.getText().isEmpty()
+                || bufferSizeTextField.getText().isEmpty()) {
+            showAlert("Missing parameters", "Please fill all the parameters.");
+            return;
+        }
+
+        double distance = Double.parseDouble(distanceTextField.getText());
+        double signalVelocity = Double.parseDouble(signalVelocityTextField.getText());
+        int bufferSize = Integer.parseInt(bufferSizeTextField.getText());
+
+        double estimatedDistance = SondaCore.run(
+                activeSignals.values().iterator().next(),
+                distance,
+                signalVelocity,
+                bufferSize
+        );
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        grid.add(new Label("Signal: " + activeSignals.keySet().iterator().next()), 0, 0);
+        grid.add(new Label("Distance: " + distance), 0, 1);
+        grid.add(new Label("Signal velocity: " + signalVelocity), 0, 2);
+        grid.add(new Label("Buffer size: " + bufferSize), 0, 3);
+        grid.add(new Label("Estimated distance: " + estimatedDistance), 0, 4);
+
+        statisticsVBox.getChildren().add(grid);
+    }
+
+    private Map<String, Signal> getOneActiveSignal() {
+        Map<String, Signal> activeSignals = getActiveSignals();
+        if (activeSignals.isEmpty()) {
+            showAlert("No active signals", "Please select at least one signal to filtrate.");
+            return Collections.emptyMap();
+        }
+
+        if (activeSignals.size() > 1) {
+            showAlert("Too many active signals", "Please select only one signal to filtrate.");
+            return Collections.emptyMap();
+        }
+        return activeSignals;
+    }
+
+    // ------------ Filtration ------------
+
+    private void filtrate() {
+        Map<String, Signal> activeSignals = getOneActiveSignal();
+        if (activeSignals == null) return;
+
+        Signal filteredSignal = switch (filtrateChoiceBox.getValue()) {
+            case "Low Pass" -> SignalFactory.lowPassFIRFiltration(
+                    activeSignals.values().iterator().next(),
+                    Integer.parseInt(mParameterTextField.getText()),
+                    Double.parseDouble(cutoffFrequencyTextField.getText())
+            );
+            case "High Pass" -> SignalFactory.highPassFIRFiltration(
+                    activeSignals.values().iterator().next(),
+                    Integer.parseInt(mParameterTextField.getText()),
+                    Double.parseDouble(cutoffFrequencyTextField.getText())
+            );
+            default -> throw new IllegalStateException("Unexpected value: " + filtrateChoiceBox.getValue());
+        };
+
+        addNewSignal(filteredSignal);
     }
 
     // ------------ Signal read from file ------------
@@ -314,36 +398,18 @@ public class Controller {
     private Node createSignalUIInfoRow(Map<String, String> params) {
         HBox signalInfoRow = new HBox(5);
         for (Map.Entry<String, String> entry : params.entrySet()) {
-            Label label = new Label(entry.getKey() + ": " + entry.getValue());
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (key.equals("T")) {
+                key = "f";
+                value = String.valueOf(1 / Double.parseDouble(value));
+            }
+
+            Label label = new Label(key + ": " + value);
             label.setPadding(new Insets(5));
             signalInfoRow.getChildren().add(label);
         }
         return signalInfoRow;
-    }
-
-    private void sampleExistingSignal() {
-        Map<String, Signal> activeSignals = getActiveSignals();
-        if (activeSignals.size() != 1) {
-            showAlert("Invalid no. of signals", "Please select only 1 signal to be sampled.");
-            throw new IllegalArgumentException("invalid no. of active signals");
-        }
-
-        String sampleRateString = sampleTextField.getText();
-        double sampleRate = Double.parseDouble(sampleRateString);
-        if (sampleRateString.isEmpty() || sampleRate <= 0) {
-            showAlert("Invalid sample rate", "Please enter a valid sample rate.");
-        }
-
-        String signalId = String.valueOf(signalsObjects.size());
-        Signal signal = activeSignals.values().iterator().next();
-        logger.info("Signal: " + signal.toString());
-        Signal newSignal = SignalFactory.createNewFromSamplingExistingOne(signal, sampleRate);
-        logger.info("new signal: " + newSignal.toString());
-        signalsObjects.put(signalId, newSignal);
-
-        // add to signalsUIList
-        signalsUIList.getChildren().add(createSignalUIRow(signalId, String.valueOf(newSignal.getSignalType())));
-        signalsUIList.getChildren().add(createSignalUIInfoRow(Map.of("fs", sampleRateString)));
     }
 
     // ------------ ... ------------
@@ -352,9 +418,9 @@ public class Controller {
         if (row instanceof HBox signalInfoRow
                 && signalInfoRow.getChildren().get(1) instanceof Label signalId) {
 
-            signalsUIList.getChildren().remove(row);
             int rowIndex = signalsUIList.getChildren().indexOf(row);
-            signalsUIList.getChildren().remove(rowIndex + 1);
+            signalsUIList.getChildren().remove(row);
+            signalsUIList.getChildren().remove(rowIndex);
 
             Signal signalRemoved = signalsObjects.remove(signalId.getText());
 
@@ -560,7 +626,10 @@ public class Controller {
     }
 
     private void createNewSignal(Map<Double, Double> aggregatedSamples) {
-        Signal signal = SignalFactory.createSignal(aggregatedSamples);
+        addNewSignal(SignalFactory.createSignal(aggregatedSamples));
+    }
+
+    private void addNewSignal(Signal signal) {
         String signalId = String.valueOf(signalsObjects.size());
         signalsObjects.put(signalId, signal);
 

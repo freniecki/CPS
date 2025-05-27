@@ -371,8 +371,8 @@ public class SignalFactory {
      * @return Product of convolution
      */
     public static List<Double> convolve(List<Double> s1, List<Double> s2) {
-        logger.info("s1: " + s1);
-        logger.info("s2: " + s2);
+        logger.fine("s1: " + s1);
+        logger.fine("s2: " + s2);
 
         int productSize = s1.size() + s2.size() - 1;
         List<Double> product = new ArrayList<>(Collections.nCopies(productSize, 0.0));
@@ -383,19 +383,21 @@ public class SignalFactory {
                 double s2value = s2.get(i);
                 double value = product.get(k + i) + s1value * s2value;
                 product.set(k + i, value);
-                logger.info("k: %s | i: %s | product: %s".formatted(k, i, product));
+                logger.fine("k: %s | i: %s | product: %s".formatted(k, i, product));
             }
         }
 
-        logger.info("product: " + product);
+        logger.fine("product: " + product);
         return product;
     }
 
     // ======== CROSS-CORRELATION ========
 
     public static List<Double> crossCorrelate(List<Double> s1, List<Double> s2) {
-        logger.info("s1: " + s1);
-        logger.info("s2: " + s2);
+        logger.fine("s1: " + s1);
+        logger.fine("s2: " + s2);
+
+        s2 = s2.reversed();
 
         int productSize = s1.size() + s2.size() - 1;
         List<Double> product = new ArrayList<>(Collections.nCopies(productSize, 0.0));
@@ -406,11 +408,11 @@ public class SignalFactory {
                 double s2value = s2.get(i);
                 double value = product.get(k + i) + s1value * s2value;
                 product.set(k + i, value);
-                logger.info("k: %s | i: %s | product: %s".formatted(k, i, product));
+                logger.fine("k: %s | i: %s | product: %s".formatted(k, i, product));
             }
         }
 
-        logger.info("product: " + product);
+        logger.fine("product: " + product);
         return product;
     }
 
@@ -430,7 +432,7 @@ public class SignalFactory {
         List<Double> timestamps = signal.getTimestampSamples().keySet().stream().toList();
         List<Double> samples = signal.getTimestampSamples().values().stream().toList();
 
-        double samplingFrequency = signal.getTimestampSamples().size() / signal.getDurationTime();
+        double samplingFrequency = timestamps.size() / signal.getDurationTime();
         double K = samplingFrequency / cutoffFrequency;
         List<Double> coefficients = createFIRCoefficients(M, K);
 
@@ -439,9 +441,14 @@ public class SignalFactory {
         List<Double> product = convolve(samples, modifiedCoefficients);
 
         LinkedHashMap<Double, Double> filteredSamples = new LinkedHashMap<>();
+//        for (int i = 0; i < timestamps.size(); i++) {
+//            // get only the number of samples that are related to timestamps
+//            filteredSamples.put(timestamps.get(i), product.get(i));
+//        }
+
+        int shift = (M - 1) / 2;
         for (int i = 0; i < timestamps.size(); i++) {
-            // get only the number of samples that are related to timestamps
-            filteredSamples.put(timestamps.get(i), product.get(i));
+            filteredSamples.put(timestamps.get(i), product.get(i + shift));
         }
 
         return SignalFactory.createSignal(filteredSamples);
