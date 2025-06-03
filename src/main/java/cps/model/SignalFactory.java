@@ -477,7 +477,8 @@ public class SignalFactory {
         return firFiltration(signal, M, cutoffFrequency, coefficients -> {
             List<Double> modifiedCoefficients = new ArrayList<>();
             for (int n = 0; n < coefficients.size(); n++) {
-                modifiedCoefficients.add(coefficients.get(n) * Math.pow(-1, n));
+                double coefficient = n % 2 == 0 ? coefficients.get(n) : coefficients.get(n) * -1;
+                modifiedCoefficients.add(coefficient);
             }
             return modifiedCoefficients;
         });
