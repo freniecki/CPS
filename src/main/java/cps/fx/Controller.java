@@ -1,7 +1,9 @@
 package cps.fx;
 
+import cps.dto.FiltrationDto;
 import cps.model.*;
-import cps.simulator.SondaCore;
+import cps.model.signals.Signal;
+import cps.model.signals.SignalType;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -26,6 +28,8 @@ public class Controller {
     private static final Logger logger = Logger.getLogger(Controller.class.getName());
     private static final String OPERATION = "Operation";
     private static final String NONE = "None";
+    private static final String LINEAR = "linear";
+    private static final String NO_ACTIVE_SIGNALS = "No active signals";
 
     private final Map<String, Signal> signalsObjects = new LinkedHashMap<>();
     private final Map<String, String> reconstructions = new HashMap<>();
@@ -122,7 +126,11 @@ public class Controller {
     // ------------ Sonda ------------
 
     private void startSonda() {
-        Map<String, Signal> activeSignals = getOneActiveSignal();
+        Map<String, Signal> activeSignals = getActiveSignals();
+        if (!isOneSignalActive(activeSignals)) {
+            return;
+        }
+        Signal baseSignal = activeSignals.values().iterator().next();
 
         if (distanceTextField.getText().isEmpty()
                 || signalVelocityTextField.getText().isEmpty()
@@ -135,12 +143,43 @@ public class Controller {
         double signalVelocity = Double.parseDouble(signalVelocityTextField.getText());
         int bufferSize = Integer.parseInt(bufferSizeTextField.getText());
 
-        double estimatedDistance = SondaCore.run(
-                activeSignals.values().iterator().next(),
-                distance,
-                signalVelocity,
-                bufferSize
-        );
+        // find time shift
+        List<Double> timestamps = baseSignal.getTimestamps();
+        double timeStep = timestamps.get(1) - timestamps.getFirst();
+        int arrivalIndex = (int) Math.round(2 * distance / signalVelocity / timeStep);
+
+        // create buffered subsignals
+        Map<Double, Double> transmitterSamples = new HashMap<>();
+        for (int i = 0; i < bufferSize; i++) {
+            transmitterSamples.put(timestamps.get(i), baseSignal.getSamples().get(i));
+        }
+        Signal transmitterSignal = SignalFactory.createSignal(transmitterSamples);
+        addNewSignal(transmitterSignal);
+
+        Map<Double, Double> receiverSamples = new HashMap<>();
+        for (int i = 0; i < bufferSize; i++) {
+            receiverSamples.put(timestamps.get(i), baseSignal.getSamples().get(i + arrivalIndex));
+        }
+        Signal receiverSignal = SignalFactory.createSignal(receiverSamples);
+        addNewSignal(receiverSignal);
+
+        // ---- create correlation ----
+        Signal correlationSignal = SignalOperations.crossCorrelateSignal(transmitterSignal, receiverSignal);
+        addNewSignal(correlationSignal);
+
+        // ---- calculate correlation-based distance
+        List<Double> correlationProduct = correlationSignal.getSamples();
+        int correlationSize = correlationProduct.size();
+        int correlationMiddle = correlationSize / 2;
+        int maxIndex = correlationMiddle;
+        for (int i = correlationMiddle; i < correlationSize; i++) {
+            maxIndex = correlationProduct.get(i) > correlationProduct.get(maxIndex) ? i : maxIndex;
+        }
+
+        double detectedDelay = (maxIndex) * timeStep;
+        double measuredDistance = (detectedDelay * signalVelocity) / 2.0;
+        logger.info("detectedDelay: " + detectedDelay);
+        logger.info("measuredDistance: " + measuredDistance);
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -151,38 +190,39 @@ public class Controller {
         grid.add(new Label("Distance: " + distance), 0, 1);
         grid.add(new Label("Signal velocity: " + signalVelocity), 0, 2);
         grid.add(new Label("Buffer size: " + bufferSize), 0, 3);
-        grid.add(new Label("Estimated distance: " + estimatedDistance), 0, 4);
+        grid.add(new Label("Estimated distance: " + measuredDistance), 0, 4);
 
         statisticsVBox.getChildren().add(grid);
     }
 
-    private Map<String, Signal> getOneActiveSignal() {
-        Map<String, Signal> activeSignals = getActiveSignals();
+    private boolean isOneSignalActive(Map<String, Signal> activeSignals) {
         if (activeSignals.isEmpty()) {
-            showAlert("No active signals", "Please select at least one signal to filtrate.");
-            return Collections.emptyMap();
+            showAlert(NO_ACTIVE_SIGNALS, "Please select at least one signal to filtrate.");
+            return false;
         }
 
         if (activeSignals.size() > 1) {
             showAlert("Too many active signals", "Please select only one signal to filtrate.");
-            return Collections.emptyMap();
+            return false;
         }
-        return activeSignals;
+        return true;
     }
 
     // ------------ Filtration ------------
 
     private void filtrate() {
-        Map<String, Signal> activeSignals = getOneActiveSignal();
-        if (activeSignals == null) return;
+        Map<String, Signal> activeSignals = getActiveSignals();
+        if (!isOneSignalActive(activeSignals)) {
+            return;
+        }
 
-        Signal filteredSignal = switch (filtrateChoiceBox.getValue()) {
-            case "Low Pass" -> SignalFactory.lowPassFIRFiltration(
+        FiltrationDto filtrationDto = switch (filtrateChoiceBox.getValue()) {
+            case "Low Pass" -> SignalOperations.lowPassFIRFiltration(
                     activeSignals.values().iterator().next(),
                     Integer.parseInt(mParameterTextField.getText()),
                     Double.parseDouble(cutoffFrequencyTextField.getText())
             );
-            case "High Pass" -> SignalFactory.highPassFIRFiltration(
+            case "High Pass" -> SignalOperations.highPassFIRFiltration(
                     activeSignals.values().iterator().next(),
                     Integer.parseInt(mParameterTextField.getText()),
                     Double.parseDouble(cutoffFrequencyTextField.getText())
@@ -190,7 +230,7 @@ public class Controller {
             default -> throw new IllegalStateException("Unexpected value: " + filtrateChoiceBox.getValue());
         };
 
-        addNewSignal(filteredSignal);
+        addNewSignal(filtrationDto.filteredSignal());
     }
 
     // ------------ Signal read from file ------------
@@ -383,8 +423,8 @@ public class Controller {
         signalUIRow.getChildren().add(quantizationType);
 
         ChoiceBox<String> reconstructionType = new ChoiceBox<>();
-        reconstructionType.getItems().addAll("zero-order hold", "linear", "sinc-based");
-        reconstructionType.setValue("linear");
+        reconstructionType.getItems().addAll("zero-order hold", LINEAR, "sinc-based");
+        reconstructionType.setValue(LINEAR);
         signalUIRow.getChildren().add(reconstructionType);
 
         Button removeButton = new Button("X");
@@ -453,7 +493,7 @@ public class Controller {
         for (Map.Entry<String, Signal> entry : activeSignals.entrySet()) {
             XYChart.Series<Number, Number> series = switch (reconstructions.get(entry.getKey())) {
                 case "zero-order hold" -> createZeroHoldSeries(entry.getValue().getTimestampSamples());
-                case "linear" -> createLinearInterpolationSeries(entry.getValue().getTimestampSamples());
+                case LINEAR -> createLinearInterpolationSeries(entry.getValue().getTimestampSamples());
                 case "sinc-based" -> createSincBasedSeries(entry.getValue().getTimestampSamples());
                 default -> {
                     XYChart.Series<Number, Number> s = new XYChart.Series<>();
@@ -618,7 +658,7 @@ public class Controller {
                 String reconstructionType = (String) reconstructionTypeChoiceBox.getValue();
                 reconstructions.put(signalId, reconstructionType);
 
-                logger.info("id: " + signalId + " | " + quantizationBits + " " + quantizationType + " " + reconstructionType + " | " + newSignal.toString());
+                logger.fine("id: " + signalId + " | " + quantizationBits + " " + quantizationType + " " + reconstructionType + " | " + newSignal.toString());
             }
         }
 
@@ -633,7 +673,7 @@ public class Controller {
         String signalId = String.valueOf(signalsObjects.size());
         signalsObjects.put(signalId, signal);
 
-        SignalDao.writeSignalToFile(signal);
+        //SignalDao.writeSignalToFile(signal);
 
         signalsUIList.getChildren().add(createSignalUIRow(signalId, signal.getSignalType().toString()));
         signalsUIList.getChildren().add(createSignalUIInfoRow(Map.of("", "")));
@@ -644,7 +684,7 @@ public class Controller {
     private void calculateAndDisplayStatistics() {
         Map<String, Signal> activeSignals = getActiveSignals();
         if (activeSignals.isEmpty()) {
-            showAlert("No active signals", "Please select at least one signal to calculate statistics.");
+            showAlert(NO_ACTIVE_SIGNALS, "Please select at least one signal to calculate statistics.");
             return;
         }
 
@@ -684,7 +724,7 @@ public class Controller {
     private void calculateAndDisplayMeasures() {
         Map<String, Signal> activeSignals = getActiveSignals();
         if (activeSignals.isEmpty()) {
-            showAlert("No active signals", "Please select at least one signal to calculate statistics.");
+            showAlert(NO_ACTIVE_SIGNALS, "Please select at least one signal to calculate statistics.");
             return;
         }
 
@@ -728,7 +768,7 @@ public class Controller {
     private void calculateAndDisplayHistogram() {
         Map<String, Signal> activeSignals = getActiveSignals();
         if (activeSignals.isEmpty()) {
-            showAlert("No active signals", "Please select at least one signal to show histogram.");
+            showAlert(NO_ACTIVE_SIGNALS, "Please select at least one signal to show histogram.");
             return;
         }
 

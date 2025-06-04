@@ -19,6 +19,17 @@ public class StatisticTool {
         return stats;
     }
 
+    public static Map<String, Double> getMeasures(Map<Double, Double> baseSamples, Map<Double, Double> samples) {
+        Map<String, Double> measures = new HashMap<>();
+        measures.put("MSE", StatisticTool.getMSE(baseSamples, samples));
+        measures.put("SNR", StatisticTool.getSNR(baseSamples, samples));
+        measures.put("PSNR", StatisticTool.getPSNR(baseSamples, samples));
+        measures.put("ENOB", StatisticTool.getENOB(baseSamples, samples));
+        measures.put("MD", StatisticTool.getMD(baseSamples, samples));
+        return measures;
+    }
+
+
     public static Map<String, Integer> createHistogramData(int numBins, List<Double> samples) {
         if (samples.isEmpty()) return new HashMap<>();
 

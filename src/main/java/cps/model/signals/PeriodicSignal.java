@@ -1,4 +1,4 @@
-package cps.model;
+package cps.model.signals;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -7,6 +7,6 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class PolygonalSignal extends PeriodicSignal{
-    double dutyCycle;
+public class PeriodicSignal extends Signal {
+    double period;
 }

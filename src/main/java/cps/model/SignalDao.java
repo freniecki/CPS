@@ -1,5 +1,7 @@
 package cps.model;
 
+import cps.model.signals.Signal;
+
 import java.io.*;
 import java.time.LocalDate;
 import java.time.LocalTime;

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="cps.fx.MainController">
+    <!-- GÓRNE MENU -->
+    <top>
+        <fx:include fx:id="topMenuContainer" source="top_menu.fxml"/>
+    </top>
+
+    <!-- LEWA LISTA SYGNAŁÓW -->
+    <left>
+        <fx:include fx:id="signalListContainer" source="signal_list.fxml"/>
+    </left>
+
+    <!-- CENTRALNY WYKRES -->
+    <center>
+        <fx:include fx:id="chartContainer" source="chart_view.fxml"/>
+    </center>
+
+    <!-- PRAWA SEKCJA STATYSTYK -->
+    <right>
+        <fx:include fx:id="statisticsContainer" source="statistics_view.fxml"/>
+    </right>
+</BorderPane>
