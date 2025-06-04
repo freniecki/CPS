@@ -1,4 +1,4 @@
-package cps.fx;
+package cps.fx.utils;
 
 import cps.model.signals.Signal;
 import javafx.collections.FXCollections;
@@ -29,5 +29,9 @@ public class SignalRepository {
 
     public boolean contains(Signal signal) {
         return signalList.contains(signal);
+    }
+
+    public void clear() {
+        signalList.clear();
     }
 }

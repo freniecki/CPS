@@ -10,6 +10,9 @@ import java.util.*;
 @AllArgsConstructor
 @SuperBuilder
 public class Signal implements Serializable {
+    @Builder.Default
+    String name = "Signal";
+
     double amplitude;
     double startTime;
     double durationTime;
@@ -28,5 +31,15 @@ public class Signal implements Serializable {
 
     public List<Double> getSamples() {
         return new ArrayList<>(timestampSamples.values());
+    }
+
+    @Override
+    public String toString() {
+        return "Signal{" +
+                "name=" + name +
+                ", A=" + String.format("%.2f", amplitude) +
+                ", t=" + String.format("%.2f", startTime) +
+                ", d=" + String.format("%.2f", durationTime) +
+                "}";
     }
 }

@@ -18,19 +18,19 @@ public class MainController {
         ChartController chartController;
         SignalListController signalListController;
         TopMenuController topMenuController;
-        FXMLLoader topMenuLoader = new FXMLLoader(getClass().getResource("/cps/controller/top_menu.fxml"));
+        FXMLLoader topMenuLoader = new FXMLLoader(getClass().getResource("top_menu.fxml"));
         AnchorPane topMenuPane = topMenuLoader.load();
         topMenuController = topMenuLoader.getController();
 
-        FXMLLoader signalListLoader = new FXMLLoader(getClass().getResource("/cps/controller/signal_list.fxml"));
+        FXMLLoader signalListLoader = new FXMLLoader(getClass().getResource("signal_list.fxml"));
         AnchorPane signalListPane = signalListLoader.load();
         signalListController = signalListLoader.getController();
 
-        FXMLLoader chartLoader = new FXMLLoader(getClass().getResource("/cps/controller/chart_view.fxml"));
+        FXMLLoader chartLoader = new FXMLLoader(getClass().getResource("chart_view.fxml"));
         AnchorPane chartPane = chartLoader.load();
         chartController = chartLoader.getController();
 
-        FXMLLoader statisticsLoader = new FXMLLoader(getClass().getResource("/cps/controller/statistics_view.fxml"));
+        FXMLLoader statisticsLoader = new FXMLLoader(getClass().getResource("statistics_view.fxml"));
         AnchorPane statisticsPane = statisticsLoader.load();
         statisticsController = statisticsLoader.getController();
 

@@ -1,6 +1,7 @@
 package cps.fx;
 
-import cps.fx.utils.NumericTextFieldFactory;
+import cps.fx.utils.SignalRepository;
+import cps.fx.utils.TextFieldFactory;
 import cps.model.SignalFactory;
 import cps.model.signals.Signal;
 import cps.model.signals.SignalType;
@@ -24,21 +25,25 @@ public class SignalListController {
 
     @FXML private ComboBox<SignalType> signalTypeComboBox;
     @FXML private Button createSignalButton;
+    @FXML private Button clearSignalsListButton;
+
     @FXML private VBox parametersVBox;
     @FXML private ListView<Signal> signalsListView;
 
     @FXML
     public void initialize() {
+        signalsListView.setPadding(new Insets(5));
         signalTypeComboBox.setItems(FXCollections.observableArrayList(SignalType.values()));
         signalTypeComboBox.getSelectionModel().selectFirst();
         signalTypeComboBox.setOnAction(e -> addCreateSignalPanel());
 
+        createSignalButton.setPadding(new Insets(5));
         createSignalButton.setOnAction(e -> createSignal());
 
+        clearSignalsListButton.setOnAction(e -> SignalRepository.getInstance().clear());
+
         signalsListView.setItems(SignalRepository.getInstance().getSignals());
-        // add usage settings to signalsListView
-
-
+        signalsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     }
 
     // ---- SIGNAL LISTVIEW ACCESS ----
@@ -57,21 +62,32 @@ public class SignalListController {
     private void addConfigurationRow(int signalId) {
         SignalType signalType = SignalType.values()[signalId];
 
-        HBox labelHBox = new HBox();
-        Label signalLabel = new Label(signalType.toString());
-        signalLabel.setPadding(new Insets(10));
-        labelHBox.getChildren().add(signalLabel);
+        HBox labelHBox = createLabelRow(signalType);
 
         HBox configurationRow = createParamRow(signalType);
-        configurationRow.setPadding(new Insets(10));
+        configurationRow.setPadding(new Insets(5));
 
         parametersVBox.getChildren().clear();
         parametersVBox.getChildren().addAll(labelHBox, configurationRow);
     }
 
+    private HBox createLabelRow(SignalType signalType) {
+        HBox labelHBox = new HBox();
+        Label signalLabel = new Label(signalType.toString());
+        signalLabel.setPadding(new Insets(5));
+
+        TextField customNameField = new TextField();
+        customNameField.setPromptText("Custom name");
+        customNameField.setPrefWidth(100);
+        customNameField.setPadding(new Insets(5));
+
+        labelHBox.getChildren().addAll(signalLabel, customNameField);
+        return labelHBox;
+    }
+
     private HBox createParamRow(SignalType signalType) {
         HBox paramRow = new HBox();
-        paramRow.setSpacing(10);
+        paramRow.setSpacing(5);
 
         String[] paramNames = switch (signalType) {
             case UNIFORM_NOISE, GAUSS_NOISE -> new String[]{"A", "t", "d", "fs"};
@@ -92,10 +108,12 @@ public class SignalListController {
             } else {
                 Label label = new Label(s);
                 label.setPadding(new Insets(5, 2, 5, 2));
-                paramRow.getChildren().addAll(label, NumericTextFieldFactory.createPositiveDoubleField());
+                paramRow.getChildren().add(label);
             }
+            TextField textField = TextFieldFactory.createPositiveDoubleField();
+            textField.setPrefWidth(40);
+            paramRow.getChildren().add(textField);
         }
-
         return paramRow;
     }
 
@@ -108,13 +126,15 @@ public class SignalListController {
         Label signalLabel = (Label) labelHBox.getChildren().getFirst();
         SignalType signalType = SignalType.valueOf(signalLabel.getText());
 
+        TextField customNameLabel = (TextField) labelHBox.getChildren().get(1);
+        String customName = customNameLabel.getText();
+
         Map<String, String> params = getParams(parametersVBox.getChildren().get(1));
 
-        // Ustaw próbkowanie (jeśli podano fs)
         if (params.containsKey("fs")) {
             double samplingFrequency = Double.parseDouble(params.remove("fs"));
             if (samplingFrequency <= 0) {
-                logger.warning("Częstotliwość próbkowania musi być dodatnia.");
+                logger.warning("Sampling frequency must be positive.");
                 return;
             }
             SignalFactory.setSampleStep(1 / samplingFrequency);
@@ -122,10 +142,14 @@ public class SignalListController {
 
         try {
             Signal signal = SignalFactory.createSignal(signalType, params);
+            if (!customName.isEmpty()) {
+                signal.setName(customName);
+            }
+
             SignalRepository.getInstance().addSignal(signal);
             parametersVBox.getChildren().clear();
         } catch (Exception e) {
-            logger.warning("Nie udało się stworzyć sygnału: " + e.getMessage());
+            logger.warning("Failed to create signal: " + e.getMessage());
         }
     }
 

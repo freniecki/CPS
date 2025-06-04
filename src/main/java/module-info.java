@@ -6,9 +6,11 @@ module cps.fx {
     requires static lombok;
     requires java.logging;
 
-    exports cps.fx;
-
     opens cps.fx to javafx.fxml;
     opens cps.fx.utils to javafx.fxml;
     opens cps.fx.enums to javafx.fxml;
+
+    exports cps.fx;
+    exports cps.fx.enums;
+    exports cps.fx.utils;
 }

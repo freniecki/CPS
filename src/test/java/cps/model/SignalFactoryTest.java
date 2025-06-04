@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 class SignalFactoryTest {
 
@@ -21,7 +20,7 @@ class SignalFactoryTest {
         signal2.put(0.1, 2.0);
         signal2.put(0.2, 3.0);
 
-        List<Double> product = SignalFactory.convolve(
+        List<Double> product = SignalOperations.convolve(
                 signal1.values().stream().toList(),
                 signal2.values().stream().toList());
 

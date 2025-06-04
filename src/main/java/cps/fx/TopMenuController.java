@@ -1,5 +1,6 @@
 package cps.fx;
 
+import cps.fx.utils.SignalRepository;
 import cps.fx.enums.FiltrationType;
 import cps.fx.enums.OperationType;
 import cps.dto.FiltrationDto;
@@ -95,8 +96,19 @@ public class TopMenuController {
 
     private void performOperation() {
         List<Signal> selectedSignals = signalListController.getSelectedSignals();
-
         OperationType operationType = operationTypeComboBox.getSelectionModel().getSelectedItem();
+
+        List<String> signalNames = selectedSignals.stream().map(Signal::getName).toList();
+        StringBuilder sb = new StringBuilder();
+        for (String signalName : signalNames) {
+            sb.append(signalName);
+            sb.append(switch (operationType) {
+                case SUM -> "+";
+                case DIFFERENCE -> "-";
+                case MULTIPLY -> "*";
+                case DIVIDE -> "/";
+            });
+        }
 
         Signal resultSignal = switch (operationType) {
             case SUM -> SignalOperations.sum(selectedSignals);
@@ -104,6 +116,7 @@ public class TopMenuController {
             case MULTIPLY -> SignalOperations.multiply(selectedSignals);
             case DIVIDE -> SignalOperations.divide(selectedSignals);
         };
+        resultSignal.setName(sb.toString());
 
         SignalRepository.getInstance().addSignal(resultSignal);
     }

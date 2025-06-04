@@ -5,15 +5,14 @@ import javafx.scene.control.TextFormatter;
 
 import java.util.function.UnaryOperator;
 
-public class NumericTextFieldFactory {
+public class TextFieldFactory {
 
-    private NumericTextFieldFactory() {}
+    private TextFieldFactory() {}
 
-    /**
-     * Zwraca TextField, który akceptuje tylko dodatnie liczby całkowite (0, 1, 2, ...)
-     */
     public static TextField createPositiveIntegerField() {
         TextField textField = new TextField();
+        textField.setPromptText("0");
+        textField.setMinWidth(60);
 
         UnaryOperator<TextFormatter.Change> integerFilter = change -> {
             String newText = change.getControlNewText();
@@ -28,11 +27,10 @@ public class NumericTextFieldFactory {
         return textField;
     }
 
-    /**
-     * Zwraca TextField, który akceptuje tylko dodatnie liczby zmiennoprzecinkowe (np. 0, 1.5, 10.0)
-     */
     public static TextField createPositiveDoubleField() {
         TextField textField = new TextField();
+        textField.setPromptText("0.00");
+        textField.setMinWidth(60);
 
         UnaryOperator<TextFormatter.Change> doubleFilter = change -> {
             String newText = change.getControlNewText();

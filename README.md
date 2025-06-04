@@ -62,3 +62,7 @@ parametry: amplitude, startTime, duration, period, probability
 
 **ZADANIE 4**:
 - F2, T1, S1
+- TEORIA:
+  - dft jest okresowe dla N -> więc X(k) = DFT_N dla N-okres
+  - butterfly operation
+  - 

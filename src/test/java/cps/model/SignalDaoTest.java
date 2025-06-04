@@ -1,8 +1,10 @@
 package cps.model;
 
+import cps.model.signals.PeriodicSignal;
+import cps.model.signals.Signal;
+import cps.model.signals.SignalType;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.Map;
 
 class SignalDaoTest {

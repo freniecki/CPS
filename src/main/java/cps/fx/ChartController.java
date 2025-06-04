@@ -33,6 +33,8 @@ public class ChartController {
             }
             lineChart.getData().add(series);
         }
+        lineChart.setPrefSize(chartScrollPane.getPrefWidth(), chartScrollPane.getPrefHeight());
+        lineChart.setCreateSymbols(false);
 
         chartsContainerVBox.getChildren().add(lineChart);
     }
@@ -45,10 +47,12 @@ public class ChartController {
                 series.getData().add(new XYChart.Data<>(sample.getKey(), sample.getValue()));
             }
             lineChart.getData().add(series);
+            lineChart.setPrefSize(chartScrollPane.getPrefWidth(), chartScrollPane.getPrefHeight());
+            lineChart.setCreateSymbols(false);
+
             chartsContainerVBox.getChildren().add(lineChart);
         }
     }
-
 
     public void clear() {
         chartsContainerVBox.getChildren().clear();
