@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="114.0" prefWidth="1536.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.TopMenuController">
+    <!-- OPERACJE -->
+    <Label layoutX="20.0" layoutY="26.0" text="Operation:" />
+    <ComboBox fx:id="operationTypeComboBox" layoutX="20.0" layoutY="52.0" prefWidth="150.0" />
+
+    <Button fx:id="operationButton" layoutX="119.0" layoutY="22.0" mnemonicParsing="false" text="Do it!" />
+    <Button fx:id="clearChartsButton" layoutX="233.0" layoutY="60.0" mnemonicParsing="false" text="Clear charts" />
+
+    <ComboBox fx:id="generateChartComboBox" layoutX="253.0" layoutY="22.0" />
+
+    <!-- FILTRACJA -->
+    <Label layoutX="445.0" layoutY="26.0" text="Filter:" />
+    <ComboBox fx:id="filtrationTypeComboBox" layoutX="500.0" layoutY="22.0" prefWidth="150.0" />
+
+    <Label layoutX="445.0" layoutY="57.0" text="fc:" />
+    <TextField fx:id="cutoffFrequencyTextField" layoutX="466.0" layoutY="52.0" prefHeight="26.0" prefWidth="45.0" />
+
+    <Button fx:id="filtrateButton" layoutX="589.0" layoutY="53.0" mnemonicParsing="false" text="Filtrate" />
+
+    <!-- PARAMETR M -->
+    <Label layoutX="517.0" layoutY="56.0" text="M:" />
+    <TextField fx:id="mParameterTextField" layoutX="540.0" layoutY="53.0" prefHeight="26.0" prefWidth="40.0" />
+
+    <!-- PLIK I SZEROKOŚĆ -->
+    <Button fx:id="readFileButton" layoutX="717.0" layoutY="31.0" mnemonicParsing="false" text="Read from file" />
+
+    <Label layoutX="697.0" layoutY="77.0" text="Width:" />
+    <Slider fx:id="widthSlider" layoutX="740.0" layoutY="78.0" max="3000" min="800" prefWidth="150.0" value="800" />
+
+    <!-- STATYSTYKI / HISTOGRAM -->
+    <Label layoutX="900.0" layoutY="26.0" text="Bins:" />
+    <ComboBox fx:id="histogramBinsComboBox" layoutX="940.0" layoutY="22.0" prefHeight="26.0" prefWidth="71.0" />
+
+    <Button fx:id="showHistogramButton" layoutX="900.0" layoutY="57.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="107.0" text="Histogram" />
+    <Button fx:id="calculateStatsButton" layoutX="1060.0" layoutY="43.0" mnemonicParsing="false" text="Statistics" />
+    <Button fx:id="calculateMeasuresButton" layoutX="1172.0" layoutY="44.0" mnemonicParsing="false" text="Measures" />
+    <Button fx:id="clearStatisticsButton" layoutX="1472.0" layoutY="73.0" mnemonicParsing="false" text="Clear" />
+
+    <!-- SONDA -->
+    <Label layoutX="1289.0" layoutY="22.0" text="s:" />
+    <TextField fx:id="distanceTextField" layoutX="1311.0" layoutY="18.0" prefHeight="26.0" prefWidth="44.0" />
+
+    <Label layoutX="1288.0" layoutY="48.0" text="V:" />
+    <TextField fx:id="signalVelocityTextField" layoutX="1311.0" layoutY="44.0" prefHeight="26.0" prefWidth="44.0" />
+
+    <Label layoutX="1288.0" layoutY="74.0" text="b:" />
+    <TextField fx:id="bufferSizeTextField" layoutX="1311.0" layoutY="70.0" prefHeight="26.0" prefWidth="44.0" />
+
+    <Button fx:id="startSondaButton" layoutX="1364.0" layoutY="44.0" mnemonicParsing="false" text="Run sonda" />
+
+</AnchorPane>

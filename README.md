@@ -36,3 +36,33 @@ parametry: amplitude, startTime, duration, period, impulseTime
 parametry: amplitude, startTime, duration, period, probability
 - (S11) szum impulsowy: IMPULSE_NOISE
 
+## TODOs:
+**ZADANIE 3**:
+- **operacja splotu**
+- **filtracja** (metodą okna) — filtr dolnoprzepustowy oraz filtr górnoprzepustowy (F2)
+  - o zadanej liczbie współczynników
+  - zadanej częstotliwości obcięcia
+  - okno prostokątne
+  - dodatkowo: okno Hamming'a (O1)
+- **operacja korelacji**
+  - implementacja bezpośrednia
+  - implementacja z użyciem splotu
+- **radar**
+  - symulacja śledzenia radarowego
+  - parametryzacja śledzonego obiektu:
+    - jednostka czasowa symulatora
+    - prędkość obiektu
+    - prędkość rozchodzenia się sygnału (alt. dla pręd. światła)
+  - parametryzacja czujnika:
+    - okres ciągłego sygnału sondującego — cechy sygnału: 
+      - ciągły, okresowy (z regulacją), skonstruowany na podstawie kilka sygnałów okresowych
+    - częstotliwość próbkowania sygnałów sondującego i zwrotnego
+    - długości buforów dyskretnych sygnałów sondującego i zwrotnego
+    - okres raportowania przez czujnik chwilowej odległości śledzonego obiektu
+
+**ZADANIE 4**:
+- F2, T1, S1
+- TEORIA:
+  - dft jest okresowe dla N -> więc X(k) = DFT_N dla N-okres
+  - butterfly operation
+  - 

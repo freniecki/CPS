@@ -1,4 +1,4 @@
-package cps.model;
+package cps.model.signals;
 
 public enum SignalType {
     UNIFORM_NOISE,

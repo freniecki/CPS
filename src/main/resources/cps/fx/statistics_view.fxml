@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.control.ScrollPane?>
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="cps.fx.StatisticsController"
+            prefHeight="800.0" prefWidth="400.0"
+            minWidth="400.0">
+    <ScrollPane prefHeight="800.0" prefWidth="400.0"
+                AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+                AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0">
+        <VBox fx:id="statisticsVBox" prefWidth="400.0" prefHeight="800"
+              AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+              AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0"/>
+    </ScrollPane>
+</AnchorPane>

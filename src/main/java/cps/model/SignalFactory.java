@@ -1,18 +1,21 @@
 package cps.model;
 
+import cps.model.signals.PeriodicSignal;
+import cps.model.signals.PolygonalSignal;
+import cps.model.signals.Signal;
+import cps.model.signals.SignalType;
+
 import java.util.*;
+import java.util.logging.Logger;
 
 public class SignalFactory {
-    // przy tworzeniu sygnału okresowego należy ustalić minimalną liczbę próbkowania dla okresu sygnałów okresowych
-    // częstotliwość próbkowania niech będzie 50 próbek na okres dla ładnego zarysowania kształtu naszego sygnału
-    // np. dla t = 5s oraz T = 2s -> t_i = T / 50 = 0.04 s
-
-    // w późniejszym czasie będzie trzeba uwzględnić długość trwania sygnału, aby dla sytuacji t = 100s, T = 2s
-    // nie doszło do liczby próbek znacznie przekraczającej wartość użytkową (n = 2500)
+    private static final Logger logger = Logger.getLogger(String.valueOf(SignalFactory.class));
     private static final Random random = new Random();
     private static double sampleStep = 0.01;
+    private static int quantizationBits = 8;
+    private static String quantizationType = "none";
 
-    private static final String PARAM_NO_TYPE_ERROR = "No. of param no equals to type: ";
+    private static final String PARAM_NO_TYPE_ERROR = "No. of param no equal to type: ";
 
     private SignalFactory() {
     }
@@ -21,27 +24,19 @@ public class SignalFactory {
         SignalFactory.sampleStep = sampleStep;
     }
 
-    public static Signal createSignal(SignalType type, List<String> params) {
-        if (params.size() < 3 || params.size() > 5) {
-            throw new IllegalArgumentException("params list size incorrect: " + params.size());
-        }
-
-        List<Double> retrievedParams = new ArrayList<>();
-        for (String p : params) {
-            retrievedParams.add(Double.parseDouble(p));
-        }
-
+    public static Signal createSignal(SignalType type, Map<String, String> params) {
+        List<Double> retrievedParams = params.values().stream().map(Double::parseDouble).toList();
         double amplitude = retrievedParams.getFirst();
         double startTime = retrievedParams.get(1);
         double durationTime = retrievedParams.get(2);
 
-        if (params.size() == 3) {
+        if (retrievedParams.size() == 3) {
             return switch (type) {
                 case UNIFORM_NOISE -> createUniformNoise(amplitude, startTime, durationTime);
                 case GAUSS_NOISE -> createGaussNoise(amplitude, startTime, durationTime);
                 default -> throw new IllegalArgumentException(PARAM_NO_TYPE_ERROR + type);
             };
-        } else if (params.size() == 4) {
+        } else if (retrievedParams.size() == 4) {
             double period = retrievedParams.get(3);
             return switch (type) {
                 case SINE -> createSineSignal(amplitude, startTime, durationTime, period);
@@ -50,7 +45,7 @@ public class SignalFactory {
                 case UNIT_STEP -> createUnitStepSignal(amplitude, startTime, durationTime, period);
                 default -> throw new IllegalArgumentException(PARAM_NO_TYPE_ERROR + type);
             };
-        } else if (params.size() == 5) {
+        } else if (retrievedParams.size() == 5) {
             double period = retrievedParams.get(3);
             // fifth param is one of [duty cycle, impulseTime, probability]
             double fifthParam = retrievedParams.get(4);
@@ -65,7 +60,6 @@ public class SignalFactory {
         } else {
             throw new IllegalArgumentException(PARAM_NO_TYPE_ERROR + type);
         }
-
     }
 
     public static Signal createSignal(Map<Double, Double> timeStampSamples) {
@@ -87,12 +81,47 @@ public class SignalFactory {
         return Signal.builder()
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.CUSTOM)
                 .build();
     }
 
-    // ---- CONTINUOUS SIGNALS ----
+    public static Signal createSignalWithQuantization(SignalType type, Map<String, String> params, int quantizationBits, String quantizationType) {
+        SignalFactory.quantizationBits = quantizationBits;
+        SignalFactory.quantizationType = quantizationType;
+
+        if (params.size() < 3 || params.size() > 5) {
+            throw new IllegalArgumentException("retrieved params list size incorrect: " + params.size());
+        }
+
+        return createSignal(type, params);
+    }
+
+    public static Signal createSignalWithQuantization(Signal signal, int quantizationBits, String quantizationType) {
+        Map<Double, Double> timeStampSamples = signal.getTimestampSamples();
+
+        SignalFactory.quantizationBits = quantizationBits;
+        SignalFactory.quantizationType = quantizationType;
+
+        return createSignal(timeStampSamples);
+    }
+
+    public static Signal createNewFromSamplingExistingOne(Signal signal, double sampleRate) {
+        LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
+        for (double timestamp = signal.getStartTime(); timestamp < signal.getStartTime() + signal.getDurationTime(); timestamp += sampleRate) {
+            samples.putLast(timestamp, signal.getTimestampSamples().get(timestamp));
+        }
+
+        return Signal.builder()
+                .amplitude(signal.getAmplitude())
+                .startTime(signal.getStartTime())
+                .durationTime(signal.getDurationTime())
+                .timestampSamples(quantizeSamples(samples))
+                .signalType(signal.getSignalType())
+                .build();
+    }
+
+    // ======== CONTINUOUS SIGNALS ========
 
     private static Signal createUniformNoise(double amplitude, double startTime, double durationTime) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
@@ -104,7 +133,7 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.UNIFORM_NOISE)
                 .build();
     }
@@ -119,14 +148,14 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.GAUSS_NOISE)
                 .build();
     }
 
     private static Signal createSineSignal(double amplitude, double startTime, double durationTime, double period) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
-        for (double timestamp = startTime; timestamp < startTime + durationTime; timestamp += sampleStep) {
+        for (double timestamp = startTime; timestamp <= startTime + durationTime; timestamp += sampleStep) {
             samples.putLast(timestamp, amplitude * Math.sin(2 * Math.PI / period * timestamp));
         }
 
@@ -134,7 +163,7 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.SINE)
                 .period(period)
                 .build();
@@ -152,7 +181,7 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.SINE_HALF)
                 .period(period)
                 .build();
@@ -170,7 +199,7 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.SINE_FULL)
                 .period(period)
                 .build();
@@ -188,7 +217,7 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.RECTANGLE)
                 .period(period)
                 .dutyCycle(dutyCycle)
@@ -207,7 +236,7 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.RECTANGLE_SYMETRIC)
                 .period(period)
                 .dutyCycle(dutyCycle)
@@ -235,7 +264,7 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.TRIANGLE)
                 .period(period)
                 .dutyCycle(dutyCycle)
@@ -258,12 +287,12 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.UNIT_STEP)
                 .build();
     }
 
-    // ---- DISCRETE SIGNALS ----
+    // ======== DISCRETE SIGNALS ========
 
     private static Signal createUnitImpulseSignal(double amplitude, double startTime, double durationTime, double period, double impulseTime) {
         LinkedHashMap<Double, Double> samples = new LinkedHashMap<>();
@@ -276,7 +305,7 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.UNIT_IMPULS)
                 .build();
     }
@@ -292,14 +321,43 @@ public class SignalFactory {
                 .amplitude(amplitude)
                 .startTime(startTime)
                 .durationTime(durationTime)
-                .timestampSamples(samples)
+                .timestampSamples(quantizeSamples(samples))
                 .signalType(SignalType.IMPULSE_NOISE)
                 .build();
     }
 
-    // ---- TOOLS ----
+    // ======== TOOLS ========
+
+    private static double quantize(double value, double min, double max) {
+        int levels = (int) Math.pow(2, quantizationBits);
+        double step = (max - min) / (levels - 1);
+
+        double quantized;
+        switch (quantizationType) {
+            case "none" -> quantized = value;
+            case "with cut" -> {
+                value = Math.clamp(value, min, max);
+                quantized = min + step * (int)((value - min) / step);
+            }
+            case "with rounding" -> quantized = min + Math.round((value - min) / step) * step;
+            default -> throw new IllegalArgumentException("Unsupported quantization type: " + quantizationType);
+        }
+        return quantized;
+    }
+
+    private static LinkedHashMap<Double, Double> quantizeSamples(LinkedHashMap<Double, Double> samples) {
+        double min = Collections.min(samples.values());
+        double max = Collections.max(samples.values());
+
+        LinkedHashMap<Double, Double> quantized = new LinkedHashMap<>();
+        for (var entry : samples.entrySet()) {
+            quantized.put(entry.getKey(), quantize(entry.getValue(), min, max));
+        }
+        return quantized;
+    }
 
     private static double getUniformValue(double range) {
         return (Math.random() * 2 - 1) * range;
     }
+
 }

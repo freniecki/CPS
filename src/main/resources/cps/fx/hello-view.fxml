@@ -3,93 +3,131 @@
 <?import java.lang.String?>
 <?import javafx.collections.FXCollections?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="864.0" prefWidth="1536.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.Controller">
-   <top>
-       <AnchorPane prefHeight="69.0" prefWidth="600.0" BorderPane.alignment="CENTER">
-           <Button fx:id="readfileButton" layoutX="369.0" layoutY="22.0" mnemonicParsing="false" text="Read from file" />
-           <Button fx:id="calculateStatsButton" layoutX="1296.0" layoutY="22.0" mnemonicParsing="false" text="Statistics" />
+<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity"
+            minWidth="-Infinity" prefHeight="864.0" prefWidth="1536.0" xmlns="http://javafx.com/javafx/23.0.1"
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.Controller">
+    <top>
+        <AnchorPane prefHeight="114.0" prefWidth="1536.0" BorderPane.alignment="CENTER">
+            <!-- LEWA STRONA -->
+            <MenuButton fx:id="signalMenu" layoutX="24.0" layoutY="22.0" mnemonicParsing="false" text="Signal">
+                <items>
+                    <MenuItem fx:id="uniformNoiseMenuItem" text="Uniform Noise"/>
+                    <MenuItem fx:id="gaussNoiseMenuItem" text="Gauss Noise"/>
+                    <MenuItem fx:id="sineMenuItem" text="Sine"/>
+                    <MenuItem fx:id="sineHalfMenuItem" text="Half Sine"/>
+                    <MenuItem fx:id="sineFullMenuItem" text="Full Sine"/>
+                    <MenuItem fx:id="rectangularMenuItem" text="Rectangular"/>
+                    <MenuItem fx:id="rectangularSymetricMenuItem" text="Rectangular Symetric"/>
+                    <MenuItem fx:id="triangularMenuItem" text="Triangular"/>
+                    <MenuItem fx:id="unitStepMenuItem" text="Unit Step"/>
+                    <MenuItem fx:id="unitImpulseMenuItem" text="Unit Impulse"/>
+                    <MenuItem fx:id="impulseNoiseMenuItem" text="Impulse Noise"/>
+                </items>
+            </MenuButton>
+            <Button fx:id="createSignalButton" layoutX="32.0" layoutY="57.0" mnemonicParsing="false" text="Create"/>
 
-           <Label layoutX="1090.0" layoutY="26.0" text="Bins:" />
-           <ComboBox fx:id="histogramBinsComboBox" layoutX="1126.0" layoutY="22.0" prefHeight="26.0" prefWidth="71.0">
-               <items>
-                   <FXCollections fx:factory="observableArrayList">
-                       <String fx:value="5" />
-                       <String fx:value="10" />
-                       <String fx:value="15" />
-                       <String fx:value="20" />
-                   </FXCollections>
-               </items>
-               <value>
-                   <String fx:value="10" />
-               </value>
-           </ComboBox>
-           <Button fx:id="showHistogramButton" layoutX="1205.0" layoutY="22.0" mnemonicParsing="false" text="Histogram" />
+            <MenuButton fx:id="operationMenu" layoutX="178.0" layoutY="22.0" text="Operation">
+                <items>
+                    <MenuItem fx:id="noneMenuItem" text="None"/>
+                    <MenuItem fx:id="sumMenuItem" text="Sum"/>
+                    <MenuItem fx:id="differenceMenuItem" text="Difference"/>
+                    <MenuItem fx:id="multiplyMenuItem" text="Multiply"/>
+                    <MenuItem fx:id="divideMenuItem" text="Divide"/>
+                </items>
+            </MenuButton>
+            <Button fx:id="generateButton" layoutX="190.0" layoutY="57.0" mnemonicParsing="false" text="Generate"/>
 
-           <!-- Menu sygnałów i operacji (po prawej stronie) -->
-           <MenuButton fx:id="signalMenu" layoutX="23.0" layoutY="22.0" mnemonicParsing="false" text="Signal">
-               <items>
-                   <MenuItem fx:id="uniformNoiseMenuItem" text="Uniform Noise" />
-                   <MenuItem fx:id="gaussNoiseMenuItem" text="Gauss Noise" />
-                   <MenuItem fx:id="sineMenuItem" text="Sine" />
-                   <MenuItem fx:id="sineHalfMenuItem" text="Half Sine" />
-                   <MenuItem fx:id="sineFullMenuItem" text="Full Sine" />
-                   <MenuItem fx:id="rectangularMenuItem" text="Rectangular" />
-                   <MenuItem fx:id="rectangularSymetricMenuItem" text="Rectangular Symetric" />
-                   <MenuItem fx:id="triangularMenuItem" text="Triangular" />
-                   <MenuItem fx:id="unitStepMenuItem" text="Unit Step" />
-                   <MenuItem fx:id="unitImpulseMenuItem" text="Unit Impulse" />
-                   <MenuItem fx:id="impulseNoiseMenuItem" text="Impulse Noise" />
-               </items>
-           </MenuButton>
+            <Label layoutX="406.0" layoutY="70.0" text="fc"/>
+            <TextField fx:id="cutoffFrequencyTextField" layoutX="424.0" layoutY="66.0" prefHeight="26.0"
+                       prefWidth="45.0"/>
+            <ChoiceBox fx:id="filtrateChoiceBox" layoutX="478.0" layoutY="35.0" prefWidth="150.0">
+                <items>
+                    <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="Low Pass"/>
+                        <String fx:value="High Pass"/>
+                    </FXCollections>
+                </items>
+                <value>
+                    <String fx:value="Low Pass"/>
+                </value>
+            </ChoiceBox>
+            <Button fx:id="filtrateButton" layoutX="515.0" layoutY="66.0" mnemonicParsing="false" text="Filtrate"/>
 
-           <MenuButton fx:id="operationMenu" layoutX="105.0" layoutY="22.0" text="Operation">
-               <items>
-                   <MenuItem fx:id="noneMenuItem" text="None" />
-                   <MenuItem fx:id="sumMenuItem" text="Sum" />
-                   <MenuItem fx:id="differenceMenuItem" text="Difference" />
-                   <MenuItem fx:id="multiplyMenuItem" text="Multiply" />
-                   <MenuItem fx:id="divideMenuItem" text="Divide" />
-               </items>
-           </MenuButton>
+            <!-- ŚRODEK -->
+            <Button fx:id="readFileButton" layoutX="908.0" layoutY="26.0" mnemonicParsing="false"
+                    text="Read from file"/>
 
-           <Button fx:id="generateButton" layoutX="212.0" layoutY="22.0" mnemonicParsing="false" text="Generate" />
-         <Button fx:id="clearStatisticsButton" layoutX="1472.0" layoutY="22.0" mnemonicParsing="false" text="Clear" />
+            <Label layoutX="856.0" layoutY="74.0" text="Width"/>
+            <Slider fx:id="widthSlider" layoutX="908.0" layoutY="75.0" max="3000" min="800" value="800"/>
 
-           <Label layoutX="670.0" layoutY="26.0" text="Width" />
-           <Slider fx:id="widthSlider" layoutX="726.0" layoutY="27.0" min="800" max="2000" value="800" />
-       </AnchorPane>
-   </top>
-   <left>
-       <ScrollPane prefHeight="637.0" prefWidth="500.0" BorderPane.alignment="CENTER">
-           <content>
-                <VBox fx:id="configurationVBox" prefHeight="777.0" prefWidth="500.0" BorderPane.alignment="CENTER" />
-           </content>
-       </ScrollPane>
-   </left>
-   <right>
-      <ScrollPane prefHeight="795.0" prefWidth="436.0" BorderPane.alignment="CENTER">
-         <content>
-            <VBox fx:id="statisticsVBox" prefHeight="796.0" prefWidth="436.0" />
-         </content>
-      </ScrollPane>
-   </right>
-   <center>
-      <ScrollPane fx:id="centerScrollPane" prefHeight="795.0" prefWidth="600.0" BorderPane.alignment="CENTER">
-         <content>
-            <Pane fx:id="chartPane" prefWidth="600" prefHeight="600"/>
-         </content>
-      </ScrollPane>
-       
-   </center>
+            <!-- PRAWA STRONA -->
+            <Label layoutX="1090.0" layoutY="26.0" text="Bins:"/>
+            <ComboBox fx:id="histogramBinsComboBox" layoutX="1126.0" layoutY="22.0" prefHeight="26.0" prefWidth="71.0">
+                <items>
+                    <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="5"/>
+                        <String fx:value="10"/>
+                        <String fx:value="15"/>
+                        <String fx:value="20"/>
+                    </FXCollections>
+                </items>
+                <value>
+                    <String fx:value="10"/>
+                </value>
+            </ComboBox>
+            <Button fx:id="showHistogramButton" layoutX="1090.0" layoutY="57.0" mnemonicParsing="false"
+                    prefHeight="26.0" prefWidth="107.0" text="Histogram"/>
+            <Button fx:id="calculateStatsButton" layoutX="1221.0" layoutY="44.0" mnemonicParsing="false"
+                    text="Statistics"/>
+            <Button fx:id="calculateMeasuresButton" layoutX="1305.0" layoutY="44.0" mnemonicParsing="false"
+                    text="Measures"/>
+
+            <Button fx:id="clearStatisticsButton" layoutX="1472.0" layoutY="44.0" mnemonicParsing="false" text="Clear"/>
+
+            <TextField fx:id="mParameterTextField" layoutX="424.0" layoutY="35.0" prefHeight="26.0" prefWidth="46.0"/>
+            <Label layoutX="406.0" layoutY="39.0" text="M"/>
+
+            <!-- SONDA -->
+            <Label layoutX="683.0" layoutY="26.0" text="s"/>
+            <Label layoutX="683.0" layoutY="52.0" text="V"/>
+            <Label layoutX="683.0" layoutY="79.0" text="b"/>
+
+            <TextField fx:id="distanceTextField" layoutX="698.0" layoutY="22.0" prefHeight="26.0" prefWidth="44.0"/>
+            <TextField fx:id="signalVelocityTextField" layoutX="698.0" layoutY="48.0" prefHeight="26.0" prefWidth="44.0"/>
+            <TextField fx:id="bufferSizeTextField" layoutX="698.0" layoutY="75.0" prefHeight="26.0" prefWidth="44.0"/>
+
+            <Button fx:id="startSondaButton" layoutX="748.0" layoutY="48.0" mnemonicParsing="false" text="Run sonda"/>
+        </AnchorPane>
+    </top>
+    <left>
+        <VBox prefWidth="550.0">
+            <VBox fx:id="paramPane" prefHeight="100.0" prefWidth="200.0"/>
+            <ScrollPane prefHeight="637.0" prefWidth="500.0" BorderPane.alignment="CENTER" VBox.vgrow="ALWAYS">
+                <VBox fx:id="signalsUIList" prefHeight="778.0" prefWidth="500.0" BorderPane.alignment="CENTER"/>
+            </ScrollPane>
+        </VBox>
+    </left>
+    <right>
+        <ScrollPane prefHeight="795.0" prefWidth="400.0" BorderPane.alignment="CENTER">
+            <VBox fx:id="statisticsVBox" prefHeight="796.0" prefWidth="436.0"/>
+        </ScrollPane>
+    </right>
+    <center>
+        <ScrollPane fx:id="centerScrollPane" prefHeight="795.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+            <Pane fx:id="chartPane" prefHeight="600" prefWidth="600"/>
+        </ScrollPane>
+    </center>
 </BorderPane>

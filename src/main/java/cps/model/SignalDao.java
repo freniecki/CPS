@@ -1,5 +1,7 @@
 package cps.model;
 
+import cps.model.signals.Signal;
+
 import java.io.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -22,7 +24,7 @@ public class SignalDao {
     }
 
     public static void writeSignalToFile(Signal signal) {
-        String pathString = "signals/" + LocalDate.now() + "_" + LocalTime.now() + ".ser";
+        String pathString = "resources/signals/" + LocalDate.now() + "_" + LocalTime.now() + ".ser";
 
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(pathString))) {
             objectOutputStream.writeObject(signal);
