@@ -75,6 +75,10 @@ public class StatisticsController {
         addGrid(measures);
     }
 
+    public void showSondaInfo(Map<String, Double> sondaInfo) {
+        addGrid(sondaInfo);
+    }
+
     public void clear() {
         statisticsVBox.getChildren().clear();
     }

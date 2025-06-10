@@ -16,9 +16,7 @@ class SondaCoreTest {
         params.put("d", "100.0");
         params.put("T", "1.0");
 
-        SondaCore sonda = new SondaCore();
-
-        sonda.run(
+        SondaCore.run(
                 SignalFactory.createSignal(SignalType.SINE, params),
                 2.78,
                 1.0,

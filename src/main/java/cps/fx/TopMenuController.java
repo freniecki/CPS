@@ -1,5 +1,7 @@
 package cps.fx;
 
+import cps.dto.SondaDto;
+import cps.dto.SondaInTimeDto;
 import cps.fx.utils.SignalRepository;
 import cps.fx.enums.FiltrationType;
 import cps.fx.enums.OperationType;
@@ -7,6 +9,7 @@ import cps.dto.FiltrationDto;
 import cps.model.SignalDao;
 import cps.model.SignalOperations;
 import cps.model.signals.Signal;
+import cps.simulator.SondaCore;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -17,7 +20,9 @@ import javafx.stage.FileChooser;
 import lombok.Setter;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class TopMenuController {
@@ -36,6 +41,7 @@ public class TopMenuController {
 
     // Wykres
     @FXML private ComboBox<String> generateChartComboBox;
+    @FXML private Button generateChartButton;
     @FXML private Button clearChartsButton;
 
     // Filtracja
@@ -61,6 +67,7 @@ public class TopMenuController {
     @FXML private TextField signalVelocityTextField;
     @FXML private TextField bufferSizeTextField;
     @FXML private Button startSondaButton;
+    @FXML private Button startInTimeSondaButton;
 
     @FXML private Button clearStatisticsButton;
 
@@ -71,7 +78,7 @@ public class TopMenuController {
         operationButton.setOnAction(e -> performOperation());
 
         generateChartComboBox.setItems(FXCollections.observableArrayList("Multichart", "Separate"));
-        generateChartComboBox.setOnAction(e -> generateChart());
+        generateChartButton.setOnAction(e -> generateChart());
 
         clearChartsButton.setOnAction(e -> chartController.clear());
 
@@ -90,7 +97,7 @@ public class TopMenuController {
         calculateMeasuresButton.setOnAction(e -> calculateMeasures());
 
         startSondaButton.setOnAction(e -> startSonda());
-
+        startInTimeSondaButton.setOnAction(e -> startInTimeSonda());
         clearStatisticsButton.setOnAction(e -> statisticsController.clear());
     }
 
@@ -99,15 +106,15 @@ public class TopMenuController {
         OperationType operationType = operationTypeComboBox.getSelectionModel().getSelectedItem();
 
         List<String> signalNames = selectedSignals.stream().map(Signal::getName).toList();
-        StringBuilder sb = new StringBuilder();
-        for (String signalName : signalNames) {
-            sb.append(signalName);
+        StringBuilder sb = new StringBuilder(signalNames.getFirst());
+        for (int i = 1; i < signalNames.size(); i++) {
             sb.append(switch (operationType) {
                 case SUM -> "+";
                 case DIFFERENCE -> "-";
                 case MULTIPLY -> "*";
                 case DIVIDE -> "/";
             });
+            sb.append(signalNames.get(i));
         }
 
         Signal resultSignal = switch (operationType) {
@@ -207,6 +214,54 @@ public class TopMenuController {
         double signalVelocity = Double.parseDouble(signalVelocityTextField.getText());
         int bufferSize = Integer.parseInt(bufferSizeTextField.getText());
 
+        List<Signal> selectedSignals = signalListController.getSelectedSignals();
+        if (selectedSignals.size() != 1) {
+            logger.warning("Choose one signal.");
+            return;
+        }
 
+        SondaDto sondaDto = SondaCore.run(selectedSignals.getFirst(), distance, signalVelocity, bufferSize);
+        if (sondaDto == null) {
+            logger.warning("Sonda failed");
+            return;
+        }
+
+        Signal baseBufforedSignal = sondaDto.baseBufforedSignal();
+        baseBufforedSignal.setName("baseBuffered");
+        SignalRepository.getInstance().addSignal(baseBufforedSignal);
+
+        Signal shiftedBufforedSignal = sondaDto.shiftedBufforedSignal();
+        shiftedBufforedSignal.setName("shiftedBuffered");
+        SignalRepository.getInstance().addSignal(shiftedBufforedSignal);
+
+        Signal correlationSignal = sondaDto.correlationSignal();
+        correlationSignal.setName("correlation");
+        SignalRepository.getInstance().addSignal(correlationSignal);
+
+        Map<String, Double> sondaInfo = new HashMap<>();
+        sondaInfo.put("distance", distance);
+        sondaInfo.put("signalVelocity", signalVelocity);
+        sondaInfo.put("bufferSize", (double) bufferSize);
+        sondaInfo.put("estimatedDistance", sondaDto.measuredDistance());
+        statisticsController.showSondaInfo(sondaInfo);
+    }
+
+    private void startInTimeSonda() {
+        double distance = Double.parseDouble(distanceTextField.getText());
+        double signalVelocity = Double.parseDouble(signalVelocityTextField.getText());
+        int bufferSize = Integer.parseInt(bufferSizeTextField.getText());
+
+        List<Signal> selectedSignals = signalListController.getSelectedSignals();
+        if (selectedSignals.size() != 1) {
+            logger.warning("Choose one signal.");
+            return;
+        }
+        SondaInTimeDto resultDto = SondaCore.runInTime(selectedSignals.getFirst(), distance, 10, signalVelocity, 0.1, bufferSize);
+
+        SignalRepository.getInstance().addSignal(resultDto.theoreticalDistances());
+        SignalRepository.getInstance().addSignal(resultDto.measuredDistances());
+
+        logger.info("teo: " + resultDto.theoreticalDistances().getTimestampSamples());
+        logger.info("meas: " + resultDto.measuredDistances().getTimestampSamples());
     }
 }

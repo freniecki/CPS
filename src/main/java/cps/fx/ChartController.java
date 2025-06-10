@@ -31,6 +31,7 @@ public class ChartController {
             for (Map.Entry<Double, Double> sample : signal.getTimestampSamples().entrySet()) {
                 series.getData().add(new XYChart.Data<>(sample.getKey(), sample.getValue()));
             }
+            series.setName(signal.getName());
             lineChart.getData().add(series);
         }
         lineChart.setPrefSize(chartScrollPane.getPrefWidth(), chartScrollPane.getPrefHeight());
@@ -46,6 +47,7 @@ public class ChartController {
             for (Map.Entry<Double, Double> sample : signal.getTimestampSamples().entrySet()) {
                 series.getData().add(new XYChart.Data<>(sample.getKey(), sample.getValue()));
             }
+            series.setName(signal.getName());
             lineChart.getData().add(series);
             lineChart.setPrefSize(chartScrollPane.getPrefWidth(), chartScrollPane.getPrefHeight());
             lineChart.setCreateSymbols(false);
