@@ -36,8 +36,7 @@ parametry: amplitude, startTime, duration, period, impulseTime
 parametry: amplitude, startTime, duration, period, probability
 - (S11) szum impulsowy: IMPULSE_NOISE
 
-## TODOs:
-**ZADANIE 3**:
+## ZADANIE 3
 - **operacja splotu**
 - **filtracja** (metodą okna) — filtr dolnoprzepustowy oraz filtr górnoprzepustowy (F2)
   - o zadanej liczbie współczynników
@@ -60,9 +59,10 @@ parametry: amplitude, startTime, duration, period, probability
     - długości buforów dyskretnych sygnałów sondującego i zwrotnego
     - okres raportowania przez czujnik chwilowej odległości śledzonego obiektu
 
-**ZADANIE 4**:
+## ZADANIE 4
 - F2, T1, S1
 - TEORIA:
   - dft jest okresowe dla N -> więc X(k) = DFT_N dla N-okres
   - butterfly operation
-  - 
+
+![img.png](img.png)
