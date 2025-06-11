@@ -20,7 +20,9 @@ public class SignalOperations {
     private SignalOperations() {
     }
 
-    // ============= BASE OPERATIONS =============
+    // =====================================================
+    // ================== BASE OPERATIONS ==================
+    // =====================================================
 
     private static Signal operation(List<Signal> signals, String operation) {
         LinkedHashMap<Double, Double> timestampSamples = new LinkedHashMap<>();
@@ -72,7 +74,9 @@ public class SignalOperations {
         return operation(signals, "divide");
     }
 
-    // ============= TRANSFORMATIONS =============
+    // =====================================================
+    // ================== TRANSFORMATIONS ==================
+    // =====================================================
 
     /**
      * Calculation of Discrete Fourier Transform on real numbers. In the core we calculate value based on Euler's formula.
@@ -99,13 +103,15 @@ public class SignalOperations {
         return transformedSamples;
     }
 
-    public static Complex[] fftDIT(double[] samples, int log2N) {
-        double[] flipped = flipBits(samples, log2N);
-        Complex[] complexSamples = createComplexSamples(flipped);
+    public static Complex[] fftDIF(double[] samples, int log2N) {
+        Complex[] base = createComplexSamples(samples);
+        Complex[] complexSamples = flipBits(base, log2N);
 
         int N = 1 << log2N; // kolejne przesunięcia 1 to potęgi 2, lol
-        Complex[] Ws = createWCoefficients(N / 2); // tablica współczynników o rozmiarze połowy całej transformaty
-        // odczyt możliwy poprzez podanie
+        // tablica współczynników o rozmiarze połowy całej transformaty,
+        // druga połowa to są wartości z minusem: Wn^(k+N/2) = -Wn^(k)
+        // odczyt możliwy poprzez podanie rozmiaru transformaty oraz aktualnej wartości kroku
+        //Complex[] Ws = createWCoefficients(N / 2);
 
         // dla każdej transformaty zaczynając do 2 elementowej
         for (int iteration = 0; iteration < log2N; iteration++) {
@@ -121,12 +127,26 @@ public class SignalOperations {
                     Complex W = new Complex(Math.cos(omega), Math.sin(omega));
 
                     Complex first = complexSamples[i];
-                    Complex second = complexSamples[i + step].times(W);
+                    Complex second = complexSamples[i + step];
 
                     complexSamples[i] = first.plus(second);
-                    complexSamples[i + step] = first.minus(second);
+                    complexSamples[i + step] = first.minus(second).times(W);
                 }
             }
+        }
+
+        for (int i = 0; i < N; i++) {
+            complexSamples[i].setReal(complexSamples[i].real() / N);
+            complexSamples[i].setImaginary(complexSamples[i].imaginary() / N);
+        }
+
+        return flipBits(complexSamples, log2N);
+    }
+
+    private static Complex[] createComplexSamples(double[] flipped) {
+        Complex[] complexSamples = new Complex[flipped.length];
+        for (int i = 0; i < flipped.length; i++) {
+            complexSamples[i] = new Complex(flipped[i], 0);
         }
         return complexSamples;
     }
@@ -137,11 +157,11 @@ public class SignalOperations {
      * @param log2N No. of bits
      * @return Flipped array.
      */
-    private static double[] flipBits(double[] samples, int log2N) {
+    private static Complex[] flipBits(Complex[] samples, int log2N) {
         for (int i = 0; i < samples.length; i++) {
             int flippedBit = reverseBits(i, log2N);
             if (i < flippedBit) {
-                double temp = samples[i];
+                Complex temp = samples[i];
                 samples[i] = samples[flippedBit];
                 samples[flippedBit] = temp;
             }
@@ -155,7 +175,7 @@ public class SignalOperations {
      * @param log2N no. of bits
      * @return flipped number
      */
-    public static int reverseBits(int i, int log2N) {
+    private static int reverseBits(int i, int log2N) {
         int reversed = 0;
         for (int bit = 0; bit < log2N; bit++) {
             reversed <<= 1;
@@ -175,23 +195,42 @@ public class SignalOperations {
         return W;
     }
 
-    private static Complex[] createComplexSamples(double[] flipped) {
-        Complex[] complexSamples = new Complex[flipped.length];
-        for (int i = 0; i < flipped.length; i++) {
-            complexSamples[i] = new Complex(flipped[i], 0);
+    // ==== COSINUS TRANSFORMATION ====
+
+    /**
+     * Applies cosinus transformation on samples. T: R -> R, so no use of complex numbers.
+     * @param samples Array of samples to be transformed.
+     * @return New array containing transformed samples.
+     */
+    public static double[] dctII(double[] samples) {
+        int N = samples.length;
+        double c0 = Math.pow(N, -0.5);
+        double cm = c0 * Math.pow(2, 0.5);
+
+        double[] result = new double[N];
+        for (int m = 0; m < N; m++) {
+            double sum = 0.0;
+            double omega;
+
+            for (int n = 0; n < N; n++) {
+                omega = Math.PI * (2 * n + 1) * m / 2 * N;
+                sum += samples[n] * Math.cos(omega);
+            }
+
+            result[m] = m == 0 ? sum / c0 : sum / cm;
         }
-        return complexSamples;
+        return result;
     }
 
-    public static void dctII() {
+    public static void fctII(double[] samples) {
+
+        // 1. samples flip
 
     }
 
-    public static void fctII() {
-
-    }
-
+    // =====================================================
     // ============= CONVOLUTION & CORRELATION =============
+    // =====================================================
 
     /**
      * Implementation of convolution operation on discrete sets of numbers. Algorithm is
