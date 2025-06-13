@@ -7,10 +7,11 @@ import cps.model.signals.SignalType;
 
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class SignalFactory {
     private static final Logger logger = Logger.getLogger(String.valueOf(SignalFactory.class));
-    private static final Random random = new Random();
+    private static final ThreadLocalRandom random = ThreadLocalRandom.current();
     private static double sampleStep = 0.01;
     private static int quantizationBits = 8;
     private static String quantizationType = "none";
@@ -357,7 +358,7 @@ public class SignalFactory {
     }
 
     private static double getUniformValue(double range) {
-        return (Math.random() * 2 - 1) * range;
+        return (random.nextDouble() * 2 - 1) * range;
     }
 
 }
