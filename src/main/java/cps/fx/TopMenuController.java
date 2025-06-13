@@ -2,12 +2,15 @@ package cps.fx;
 
 import cps.dto.SondaDto;
 import cps.dto.SondaInTimeDto;
+import cps.fx.enums.TransformationType;
 import cps.fx.utils.SignalRepository;
 import cps.fx.enums.FiltrationType;
 import cps.fx.enums.OperationType;
 import cps.dto.FiltrationDto;
 import cps.model.SignalDao;
+import cps.model.SignalFactory;
 import cps.model.SignalOperations;
+import cps.model.signals.Complex;
 import cps.model.signals.Signal;
 import cps.simulator.SondaCore;
 import javafx.collections.FXCollections;
@@ -20,10 +23,9 @@ import javafx.stage.FileChooser;
 import lombok.Setter;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class TopMenuController {
     private static final Logger logger = Logger.getLogger(TopMenuController.class.getName());
@@ -69,6 +71,10 @@ public class TopMenuController {
     @FXML private Button startSondaButton;
     @FXML private Button startInTimeSondaButton;
 
+    @FXML private ComboBox<TransformationType> transformationComboBox;
+    @FXML private ComboBox<Integer> log2NComboBox;
+    @FXML private Button transformButton;
+
     @FXML private Button clearStatisticsButton;
 
     @FXML
@@ -98,6 +104,12 @@ public class TopMenuController {
 
         startSondaButton.setOnAction(e -> startSonda());
         startInTimeSondaButton.setOnAction(e -> startInTimeSonda());
+
+        transformationComboBox.setItems(FXCollections.observableArrayList(TransformationType.values()));
+        transformationComboBox.getSelectionModel().selectFirst();
+        log2NComboBox.setItems(FXCollections.observableArrayList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        transformButton.setOnAction(e -> transform());
+
         clearStatisticsButton.setOnAction(e -> statisticsController.clear());
     }
 
@@ -263,5 +275,49 @@ public class TopMenuController {
 
         logger.info("teo: " + resultDto.theoreticalDistances().getTimestampSamples());
         logger.info("meas: " + resultDto.measuredDistances().getTimestampSamples());
+    }
+
+    private void transform() {
+        List<Signal> selectedSignals = signalListController.getSelectedSignals();
+        if (selectedSignals.size() != 1) {
+            logger.warning("Choose one signal.");
+            return;
+        }
+
+        int log2N = log2NComboBox.getValue();
+        int size = 1 << log2N;
+        List<Double> samplesList = selectedSignals.getFirst().getSamples().subList(0, size);
+        double[] samples = samplesList.stream().mapToDouble(Double::doubleValue).toArray();
+
+        switch (transformationComboBox.getValue()) {
+            case DFT -> runFourier(SignalOperations.dft(samples, log2N));
+            case FFT -> runFourier(SignalOperations.fftDIF(samples, log2N));
+            case DCT, FCT -> runCosine(samples, log2N);
+        }
+
+    }
+
+    private void runFourier(Complex[] result) {
+        List<Double> reals = Arrays.stream(result).map(Complex::real).toList();
+        Map<Double, Double> realSamples = new LinkedHashMap<>();
+        for (int i = 0; i < reals.size(); i++) {
+            realSamples.put((double) i, reals.get(i));
+        }
+        Signal realSignal = SignalFactory.createSignal(realSamples);
+        realSignal.setName("real");
+        SignalRepository.getInstance().addSignal(realSignal);
+
+        List<Double> imaginaries = Arrays.stream(result).map(Complex::imaginary).toList();
+        Map<Double, Double> imaginariesSamples = new LinkedHashMap<>();
+        for (int i = 0; i < reals.size(); i++) {
+            imaginariesSamples.put((double) i, imaginaries.get(i));
+        }
+        Signal imaginarySignal = SignalFactory.createSignal(imaginariesSamples);
+        imaginarySignal.setName("imaginary");
+        SignalRepository.getInstance().addSignal(imaginarySignal);
+    }
+
+    private void runCosine(double[] samples, int log2N) {
+
     }
 }

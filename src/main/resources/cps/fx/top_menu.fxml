@@ -7,7 +7,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane prefHeight="114.0" prefWidth="1536.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.TopMenuController">
+<AnchorPane prefHeight="114.0" prefWidth="1920.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cps.fx.TopMenuController">
     <!-- OPERACJE -->
     <Label layoutX="20.0" layoutY="26.0" text="Operation:" />
     <ComboBox fx:id="operationTypeComboBox" layoutX="20.0" layoutY="52.0" prefWidth="150.0" />
@@ -44,7 +44,7 @@
     <Button fx:id="showHistogramButton" layoutX="900.0" layoutY="57.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="107.0" text="Histogram" />
     <Button fx:id="calculateStatsButton" layoutX="1060.0" layoutY="43.0" mnemonicParsing="false" text="Statistics" />
     <Button fx:id="calculateMeasuresButton" layoutX="1172.0" layoutY="44.0" mnemonicParsing="false" text="Measures" />
-    <Button fx:id="clearStatisticsButton" layoutX="1472.0" layoutY="73.0" mnemonicParsing="false" text="Clear" />
+    <Button fx:id="clearStatisticsButton" layoutX="1856.0" layoutY="79.0" mnemonicParsing="false" text="Clear" />
 
     <!-- SONDA -->
     <Label layoutX="1289.0" layoutY="22.0" text="s:" />
@@ -56,7 +56,13 @@
     <Label layoutX="1288.0" layoutY="74.0" text="b:" />
     <TextField fx:id="bufferSizeTextField" layoutX="1311.0" layoutY="70.0" prefHeight="26.0" prefWidth="44.0" />
 
-    <Button fx:id="startSondaButton" layoutX="1364.0" layoutY="44.0" mnemonicParsing="false" text="Run sonda" />
-    <Button fx:id="startInTimeSondaButton" layoutX="1464.0" layoutY="44.0" mnemonicParsing="false" text="Run sonda in time" />
+    <Button fx:id="startSondaButton" layoutX="1365.0" layoutY="30.0" mnemonicParsing="false" text="Run sonda" />
+    <Button fx:id="startInTimeSondaButton" layoutX="1365.0" layoutY="57.0" mnemonicParsing="false" text="Run sonda in time" />
+
+    <Label layoutX="1547.0" layoutY="22.0" text="Transformaty:" />
+    <ComboBox fx:id="transformationComboBox" layoutX="1647.0" layoutY="18.0" prefWidth="150.0" />
+   <ComboBox fx:id="log2NComboBox" layoutX="1647.0" layoutY="44.0" prefWidth="150.0" />
+   <Label layoutX="1597.0" layoutY="48.0" text="log2N" />
+   <Button fx:id="transformButton" layoutX="1606.0" layoutY="73.0" mnemonicParsing="false" text="Transform" />
 
 </AnchorPane>
