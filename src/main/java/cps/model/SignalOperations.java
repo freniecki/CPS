@@ -3,15 +3,12 @@ package cps.model;
 import cps.dto.FiltrationDto;
 import cps.model.signals.Complex;
 import cps.model.signals.Signal;
-import cps.model.signals.SignalComplex;
 import cps.model.signals.SignalType;
 
 import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
 import java.util.stream.DoubleStream;
-
-import static java.lang.Math.pow;
 
 public class SignalOperations {
 
@@ -80,14 +77,15 @@ public class SignalOperations {
 
     /**
      * Calculation of Discrete Fourier Transform on real numbers. In the core we calculate value based on Euler's formula.
+     *
      * @param samples List of samples, being real number.
-     * @param log2N Number of bits.
+     * @param log2N   Number of bits.
      * @return List of calculated product of DFT being imaginary numbers.
      */
-    public static List<Complex> dft(double[] samples, int log2N) {
-        int N = (int) pow(2, log2N);
+    public static Complex[] dft(double[] samples, int log2N) {
+        int N = 1 << log2N;
 
-        List<Complex> transformedSamples = new ArrayList<>();
+        Complex[] transformedSamples = new Complex[samples.length];
         for (int i = 0; i < N; i++) {
             double real = 0.0;
             double imag = 0.0;
@@ -97,7 +95,7 @@ public class SignalOperations {
                 real += samples[i] * Math.cos(omega);
                 imag -= samples[i] * Math.sin(omega);
             }
-            transformedSamples.add(new Complex(real, imag));
+            transformedSamples[i] = new Complex(real, imag);
         }
 
         return transformedSamples;
@@ -195,7 +193,7 @@ public class SignalOperations {
         return W;
     }
 
-    // ==== COSINUS TRANSFORMATION ====
+    // ==== COSINE TRANSFORMATION ====
 
     /**
      * Applies cosinus transformation on samples. T: R -> R, so no use of complex numbers.
@@ -222,42 +220,47 @@ public class SignalOperations {
         return result;
     }
 
-    public static void fctII(double[] samples) {
+    public static double[] fctII(double[] samples) {
+        int N = samples.length;
+        if ((N & (N - 1)) != 0) {
+            logger.warning("Samples must be a power of 2");
+            throw new IllegalArgumentException("Samples must be a power of 2");
+        }
+
+        double c0 = Math.pow(N, -0.5);
+        double cm = c0 * Math.pow(2, 0.5);
 
         // 1. samples flip
+        samples = fctFlip(samples);
 
-    }
+        // 2. calculate fft of samples
+        Complex[] fftResult = fftDIF(samples, 2);
 
-    // =====================================================
-    // ============= CONVOLUTION & CORRELATION =============
-    // =====================================================
-
-    /**
-     * Implementation of convolution operation on discrete sets of numbers. Algorithm is
-     * based on 'Input-side algorithm' with O(s1.size() * s2.size()) complexity.
-     * Equation: (h * x)(n) = sum {h(k) * x(n - k)}
-     *
-     * @param signal1 List of 1st signal's values
-     * @param signal2 List of 2nd signal's values
-     * @return Product of convolution
-     */
-    public static List<Double> convolve(List<Double> signal1, List<Double> signal2) {
-        double[] s1 = signal1.stream().mapToDouble(Double::doubleValue).toArray();
-        double[] s2 = signal2.stream().mapToDouble(Double::doubleValue).toArray();
-
-        int productSize = s1.length + s2.length - 1;
-        double[] product = new double[productSize];
-
-        for (int k = 0; k < s1.length; k++) {
-            double s1value = s1[k];
-            for (int i = 0; i < s2.length; i++) {
-                double s2value = s2[i];
-                double value = product[k + i] + s1value * s2value;
-                product[k + i] = value;
-            }
+        // 3. for every find real value of operation
+        double[] result = new double[N];
+        for (int m = 0; m < N; m++) {
+            double sigma = Math.PI * m / (2 * N);
+            double value = fftResult[m].real() * Math.cos(sigma)
+                    + fftResult[m].imaginary() * Math.sin(sigma);
+            result[m] = m == 0 ? value / c0 : value / cm;
         }
-        return DoubleStream.of(product).boxed().toList();
+
+        return result;
     }
+
+    private static double[] fctFlip(double[] samples) {
+        int N = samples.length;
+        double[] result = new double[N];
+        for (int i = 0; i < N / 2; i++) {
+            result[2 * i] = samples[i];
+            result[2 * i + 1] = samples[N - 1 - i];
+        }
+        return result;
+    }
+
+    // =====================================================
+    // ==================== CORRELATION ====================
+    // =====================================================
 
     public static List<Double> crossCorrelate(List<Double> samples1, List<Double> samples2) {
         double[] s1 = samples1.stream().mapToDouble(Double::doubleValue).toArray();
@@ -296,6 +299,37 @@ public class SignalOperations {
         }
 
         return SignalFactory.createSignal(timeStampSamples);
+    }
+
+    // =====================================================
+    // ==================== CONVOLUTION ====================
+    // =====================================================
+
+    /**
+     * Implementation of convolution operation on discrete sets of numbers. Algorithm is
+     * based on 'Input-side algorithm' with O(s1.size() * s2.size()) complexity.
+     * Equation: (h * x)(n) = sum {h(k) * x(n - k)}
+     *
+     * @param signal1 List of 1st signal's values
+     * @param signal2 List of 2nd signal's values
+     * @return Product of convolution
+     */
+    public static List<Double> convolve(List<Double> signal1, List<Double> signal2) {
+        double[] s1 = signal1.stream().mapToDouble(Double::doubleValue).toArray();
+        double[] s2 = signal2.stream().mapToDouble(Double::doubleValue).toArray();
+
+        int productSize = s1.length + s2.length - 1;
+        double[] product = new double[productSize];
+
+        for (int k = 0; k < s1.length; k++) {
+            double s1value = s1[k];
+            for (int i = 0; i < s2.length; i++) {
+                double s2value = s2[i];
+                double value = product[k + i] + s1value * s2value;
+                product[k + i] = value;
+            }
+        }
+        return DoubleStream.of(product).boxed().toList();
     }
 
     /**
