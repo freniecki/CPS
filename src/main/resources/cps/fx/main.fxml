@@ -2,7 +2,8 @@
 
 <?import javafx.scene.layout.*?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="cps.fx.MainController">
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="cps.fx.MainController"
+            prefHeight="1080.0" prefWidth="1920.0">
     <!-- GÓRNE MENU -->
     <top>
         <fx:include fx:id="topMenuContainer" source="top_menu.fxml"/>
