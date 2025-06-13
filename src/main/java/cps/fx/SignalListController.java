@@ -40,7 +40,11 @@ public class SignalListController {
         createSignalButton.setPadding(new Insets(5));
         createSignalButton.setOnAction(e -> createSignal());
 
-        clearSignalsListButton.setOnAction(e -> SignalRepository.getInstance().clear());
+        clearSignalsListButton.setOnAction(e -> {
+            for (Signal signal : signalsListView.getSelectionModel().getSelectedItems()) {
+                SignalRepository.getInstance().removeSignal(signal);
+            }
+        });
 
         signalsListView.setItems(SignalRepository.getInstance().getSignals());
         signalsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
