@@ -5,13 +5,14 @@ import cps.model.signals.Signal;
 import cps.model.signals.SignalType;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.Map;
 
-class SignalDaoTest {
+class SignalIOTest {
 
     @Test
     void readSignalFromFile() {
-        Signal signal = SignalDao.readSignalFromFile("signals/2025-03-31_21:29:12.990266305.ser");
+        Signal signal = SignalIO.readSignalFromFile("signals/2025-03-31_21:29:12.990266305.ser");
 
         System.out.println(signal.getSignalType());
         for (Map.Entry<Double, Double> entry : signal.getTimestampSamples().entrySet()) {
@@ -20,7 +21,7 @@ class SignalDaoTest {
     }
 
     @Test
-    void writeSignalToFile() {
+    void writeSignalToFile() throws IOException {
 
         PeriodicSignal signal = PeriodicSignal.builder()
                 .signalType(SignalType.SINE)
@@ -30,6 +31,6 @@ class SignalDaoTest {
                 .period(1.0)
                 .build();
 
-        SignalDao.writeSignalToFile(signal);
+        SignalIO.writeSignalToFile(signal);
     }
 }
