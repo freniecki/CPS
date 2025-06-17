@@ -7,7 +7,7 @@ import cps.fx.utils.SignalRepository;
 import cps.fx.enums.FiltrationType;
 import cps.fx.enums.OperationType;
 import cps.dto.FiltrationDto;
-import cps.model.SignalDao;
+import cps.model.SignalIO;
 import cps.model.SignalFactory;
 import cps.model.SignalOperations;
 import cps.model.signals.Complex;
@@ -25,7 +25,6 @@ import lombok.Setter;
 import java.io.File;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class TopMenuController {
     private static final Logger logger = Logger.getLogger(TopMenuController.class.getName());
@@ -182,7 +181,7 @@ public class TopMenuController {
             return;
         }
 
-        Signal signal = SignalDao.readSignalFromFile(file.getPath());
+        Signal signal = SignalIO.readSignalFromFile(file.getPath());
         if (SignalRepository.getInstance().contains(signal)) {
             logger.warning("Signal already exists");
         } else {
@@ -284,40 +283,77 @@ public class TopMenuController {
             return;
         }
 
+        double fs = 1 / selectedSignals.getFirst().getTimeStep();
+        logger.info("fs: %s".formatted(fs));
+
         int log2N = log2NComboBox.getValue();
         int size = 1 << log2N;
         List<Double> samplesList = selectedSignals.getFirst().getSamples().subList(0, size);
         double[] samples = samplesList.stream().mapToDouble(Double::doubleValue).toArray();
 
         switch (transformationComboBox.getValue()) {
-            case DFT -> runFourier(SignalOperations.dft(samples, log2N));
-            case FFT -> runFourier(SignalOperations.fftDIF(samples, log2N));
-            case DCT, FCT -> runCosine(samples, log2N);
+            case DFT -> runFourier(SignalOperations.dft(samples, log2N), fs);
+            case FFT -> runFourier(SignalOperations.fftDIF(samples, log2N), fs);
+            case DCT -> runCosine(SignalOperations.dctII(samples), fs);
+            case FCT -> runCosine(SignalOperations.fctII(samples), fs);
         }
 
     }
 
-    private void runFourier(Complex[] result) {
-        List<Double> reals = Arrays.stream(result).map(Complex::real).toList();
+    private void runFourier(Complex[] result, double fs) {
+        logger.info(Arrays.deepToString(result));
+
+        int N = result.length;
+
         Map<Double, Double> realSamples = new LinkedHashMap<>();
-        for (int i = 0; i < reals.size(); i++) {
-            realSamples.put((double) i, reals.get(i));
+        Map<Double, Double> imaginarySamples = new LinkedHashMap<>();
+        Map<Double,Double> modulusSamples = new LinkedHashMap<>();
+        Map<Double, Double> phaseSamples = new LinkedHashMap<>();
+
+        for (int i = 0; i < N; i++) {
+            double real = result[i].real();
+            double imag = result[i].real();
+            double freq = (i * fs) / N;
+            realSamples.put(freq, real);
+            imaginarySamples.put(freq, imag);
+
+            double modulus = Math.hypot(real, imag);
+            modulusSamples.put(freq, modulus);
+
+            double phase = Math.atan2(imag, real);
+            phaseSamples.put(freq, phase);
         }
+
         Signal realSignal = SignalFactory.createSignal(realSamples);
         realSignal.setName("real");
         SignalRepository.getInstance().addSignal(realSignal);
 
-        List<Double> imaginaries = Arrays.stream(result).map(Complex::imaginary).toList();
-        Map<Double, Double> imaginariesSamples = new LinkedHashMap<>();
-        for (int i = 0; i < reals.size(); i++) {
-            imaginariesSamples.put((double) i, imaginaries.get(i));
-        }
-        Signal imaginarySignal = SignalFactory.createSignal(imaginariesSamples);
+        Signal imaginarySignal = SignalFactory.createSignal(imaginarySamples);
         imaginarySignal.setName("imaginary");
         SignalRepository.getInstance().addSignal(imaginarySignal);
+
+        Signal modulusSignal = SignalFactory.createSignal(modulusSamples);
+        modulusSignal.setName("modulus");
+        SignalRepository.getInstance().addSignal(modulusSignal);
+
+        Signal phaseSignal = SignalFactory.createSignal(phaseSamples);
+        phaseSignal.setName("phase");
+        SignalRepository.getInstance().addSignal(phaseSignal);
     }
 
-    private void runCosine(double[] samples, int log2N) {
+    private void runCosine(double[] samples, double fs) {
+        logger.info(Arrays.toString(samples));
 
+        int N = samples.length;
+
+        Map<Double, Double> samplesMap = new LinkedHashMap<>();
+        for (int i = 0; i < N; i++) {
+            double freq = (i * fs) / N;
+            samplesMap.put(freq, samples[i]);
+        }
+
+        Signal signal = SignalFactory.createSignal(samplesMap);
+        signal.setName("cosine");
+        SignalRepository.getInstance().addSignal(signal);
     }
 }

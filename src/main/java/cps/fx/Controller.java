@@ -238,7 +238,7 @@ public class Controller {
     private void readFile() {
         File file = fileChooser();
         if (file != null) {
-            Signal signal = SignalDao.readSignalFromFile(file.getPath());
+            Signal signal = SignalIO.readSignalFromFile(file.getPath());
             if (signalsObjects.containsValue(signal)) {
                 logger.warning("signal already exists");
             } else {

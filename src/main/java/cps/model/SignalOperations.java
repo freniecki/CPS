@@ -92,18 +92,17 @@ public class SignalOperations {
 
             for (int n = 0; n < N; n++) {
                 double omega = 2 * Math.PI * i * n / N;
-                real += samples[i] * Math.cos(omega);
-                imag -= samples[i] * Math.sin(omega);
+                real += samples[n] * Math.cos(omega);
+                imag -= samples[n] * Math.sin(omega);
             }
-            transformedSamples[i] = new Complex(real, imag);
+            transformedSamples[i] = new Complex(real / N, imag / N);
         }
 
         return transformedSamples;
     }
 
     public static Complex[] fftDIF(double[] samples, int log2N) {
-        Complex[] base = createComplexSamples(samples);
-        Complex[] complexSamples = flipBits(base, log2N);
+        Complex[] complexSamples = createComplexSamples(samples);
 
         int N = 1 << log2N; // kolejne przesunięcia 1 to potęgi 2, lol
         // tablica współczynników o rozmiarze połowy całej transformaty,
@@ -122,13 +121,13 @@ public class SignalOperations {
                 for (int j = 0; j < step; j++) {
                     // wyznaczenie W — docelowo uprzednio policzona i odczytywanie z tabeli, zgodnie z instrukcją
                     double omega = 2 * Math.PI * j / size;
-                    Complex W = new Complex(Math.cos(omega), Math.sin(omega));
+                    Complex W = new Complex(Math.cos(omega), -Math.sin(omega));
 
-                    Complex first = complexSamples[i];
-                    Complex second = complexSamples[i + step];
+                    Complex first = complexSamples[i + j];
+                    Complex second = complexSamples[i + j + step];
 
-                    complexSamples[i] = first.plus(second);
-                    complexSamples[i + step] = first.minus(second).times(W);
+                    complexSamples[i + j] = first.plus(second);
+                    complexSamples[i + j + step] = first.minus(second).times(W);
                 }
             }
         }
@@ -211,11 +210,11 @@ public class SignalOperations {
             double omega;
 
             for (int n = 0; n < N; n++) {
-                omega = Math.PI * (2 * n + 1) * m / 2 * N;
+                omega = Math.PI * (2 * n + 1) * m / (2 * N);
                 sum += samples[n] * Math.cos(omega);
             }
 
-            result[m] = m == 0 ? sum / c0 : sum / cm;
+            result[m] = m == 0 ? sum * c0 : sum * cm;
         }
         return result;
     }
@@ -227,14 +226,15 @@ public class SignalOperations {
             throw new IllegalArgumentException("Samples must be a power of 2");
         }
 
-        double c0 = Math.pow(N, -0.5);
-        double cm = c0 * Math.pow(2, 0.5);
+        double c0 = Math.sqrt(1.0 / N);
+        double cm = Math.sqrt(2.0 / N);
 
         // 1. samples flip
         samples = fctFlip(samples);
 
         // 2. calculate fft of samples
-        Complex[] fftResult = fftDIF(samples, 2);
+        int log2N = (int)(Math.log(N) / Math.log(2));
+        Complex[] fftResult = fftDIF(samples, log2N);
 
         // 3. for every find real value of operation
         double[] result = new double[N];
@@ -242,7 +242,7 @@ public class SignalOperations {
             double sigma = Math.PI * m / (2 * N);
             double value = fftResult[m].real() * Math.cos(sigma)
                     + fftResult[m].imaginary() * Math.sin(sigma);
-            result[m] = m == 0 ? value / c0 : value / cm;
+            result[m] = m == 0 ? value * c0 : value * cm;
         }
 
         return result;
