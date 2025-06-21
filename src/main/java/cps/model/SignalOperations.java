@@ -191,6 +191,42 @@ public class SignalOperations {
         return W;
     }
 
+    // ===== RECURSIVE FFT =====
+
+    public static Complex[] fft(double[] samples) {
+        return fft(createComplexSamples(samples));
+    }
+
+    public static Complex[] fft(Complex[] samples) {
+        int N = samples.length;
+
+        if (N == 1) {
+            return new Complex[]{samples[0]};
+        }
+
+        Complex[] even = new Complex[N / 2];
+        for (int k = 0; k < N / 2; k++) {
+            even[k] = samples[2 * k];
+        }
+        Complex[] evenFFT = fft(even);
+
+        Complex[] odd = even;
+        for (int k = 0; k < N / 2; k++) {
+            odd[k] = samples[2 * k + 1];
+        }
+        Complex[] oddFFT = fft(odd);
+
+        Complex[] result = new Complex[N];
+        for (int k = 0; k < N / 2; k++) {
+            double kth = -2 * k * Math.PI / N;
+            Complex W = new Complex(Math.cos(kth), Math.sin(kth));
+
+            result[k] = evenFFT[k].plus(W.times(oddFFT[k]));
+            result[k + N / 2] = evenFFT[k].minus(W.times(oddFFT[k]));
+        }
+        return result;
+    }
+
     // ==== COSINE TRANSFORMATION ====
 
     /**
