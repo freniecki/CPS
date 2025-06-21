@@ -292,15 +292,14 @@ public class TopMenuController {
         double[] samples = samplesList.stream().mapToDouble(Double::doubleValue).toArray();
 
         switch (transformationComboBox.getValue()) {
-            case DFT -> runFourier(SignalOperations.dft(samples, log2N), fs);
-            case FFT -> runFourier(SignalOperations.fftDIF(samples, log2N), fs);
-            case DCT -> runCosine(SignalOperations.dctII(samples), fs);
-            case FCT -> runCosine(SignalOperations.fctII(samples), fs);
+            case DFT -> runFourier(SignalOperations.dft(samples, log2N), fs, "dft");
+            case FFT -> runFourier(SignalOperations.fftDIF(samples, log2N), fs, "fft");
+            case DCT -> runCosine(SignalOperations.dctII(samples), fs, "dct");
+            case FCT -> runCosine(SignalOperations.fctII(samples), fs, "fct");
         }
-
     }
 
-    private void runFourier(Complex[] result, double fs) {
+    private void runFourier(Complex[] result, double fs, String name) {
         logger.info(Arrays.deepToString(result));
 
         int N = result.length;
@@ -325,23 +324,23 @@ public class TopMenuController {
         }
 
         Signal realSignal = SignalFactory.createSignal(realSamples);
-        realSignal.setName("real");
+        realSignal.setName(name + "real");
         SignalRepository.getInstance().addSignal(realSignal);
 
         Signal imaginarySignal = SignalFactory.createSignal(imaginarySamples);
-        imaginarySignal.setName("imaginary");
+        imaginarySignal.setName(name + "imaginary");
         SignalRepository.getInstance().addSignal(imaginarySignal);
 
         Signal modulusSignal = SignalFactory.createSignal(modulusSamples);
-        modulusSignal.setName("modulus");
+        modulusSignal.setName(name + "modulus");
         SignalRepository.getInstance().addSignal(modulusSignal);
 
         Signal phaseSignal = SignalFactory.createSignal(phaseSamples);
-        phaseSignal.setName("phase");
+        phaseSignal.setName(name + "phase");
         SignalRepository.getInstance().addSignal(phaseSignal);
     }
 
-    private void runCosine(double[] samples, double fs) {
+    private void runCosine(double[] samples, double fs, String name) {
         logger.info(Arrays.toString(samples));
 
         int N = samples.length;
@@ -353,7 +352,7 @@ public class TopMenuController {
         }
 
         Signal signal = SignalFactory.createSignal(samplesMap);
-        signal.setName("cosine");
+        signal.setName(name + "cosine");
         SignalRepository.getInstance().addSignal(signal);
     }
 }
