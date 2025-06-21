@@ -75,6 +75,11 @@ public class SignalOperations {
     // ================== TRANSFORMATIONS ==================
     // =====================================================
 
+    public static Complex[] dft(double[] samples, int log2N) {
+        Complex[] complexSamples = createComplexSamples(samples);
+        return dft(complexSamples, log2N);
+    }
+
     /**
      * Calculation of Discrete Fourier Transform on real numbers. In the core we calculate value based on Euler's formula.
      *
@@ -82,20 +87,21 @@ public class SignalOperations {
      * @param log2N   Number of bits.
      * @return List of calculated product of DFT being imaginary numbers.
      */
-    public static Complex[] dft(double[] samples, int log2N) {
+    public static Complex[] dft(Complex[] samples, int log2N) {
         int N = 1 << log2N;
 
-        Complex[] transformedSamples = new Complex[samples.length];
-        for (int i = 0; i < N; i++) {
+        Complex[] transformedSamples = new Complex[N];
+
+        for (int m = 0; m < N; m++) {
             double real = 0.0;
             double imag = 0.0;
 
             for (int n = 0; n < N; n++) {
-                double omega = 2 * Math.PI * i * n / N;
-                real += samples[n] * Math.cos(omega);
-                imag -= samples[n] * Math.sin(omega);
+                double omega = 2 * Math.PI * m * n / N;
+                real += samples[n].real() * Math.cos(omega);
+                imag -= samples[n].real() * Math.sin(omega);
             }
-            transformedSamples[i] = new Complex(real / N, imag / N);
+            transformedSamples[m] = new Complex(real / N, imag / N);
         }
 
         return transformedSamples;
@@ -103,47 +109,40 @@ public class SignalOperations {
 
     public static Complex[] fftDIF(double[] samples, int log2N) {
         Complex[] complexSamples = createComplexSamples(samples);
+        return fftDIF(complexSamples, log2N);
+    }
 
-        int N = 1 << log2N; // kolejne przesunięcia 1 to potęgi 2, lol
-        // tablica współczynników o rozmiarze połowy całej transformaty,
-        // druga połowa to są wartości z minusem: Wn^(k+N/2) = -Wn^(k)
-        // odczyt możliwy poprzez podanie rozmiaru transformaty oraz aktualnej wartości kroku
-        //Complex[] Ws = createWCoefficients(N / 2);
+    public static Complex[] fftDIF(Complex[] complexSamples, int log2N) {
+        int N = 1 << log2N;
 
-        // dla każdej transformaty zaczynając do 2 elementowej
-        for (int iteration = 0; iteration < log2N; iteration++) {
+        flipBits(complexSamples, log2N);
+
+        for (int iteration = 0; iteration < log2N; iteration++) { // dla każdej transformaty zaczynając od 2 elementowej
             int step = 1 << iteration; // odległość między kolejnymi elementami w transformacie do operacji motylkowej
             int size = step << 1; // rozmiar transformaty
 
-            // od pierwszego elementu z każdej grupy
-            for (int i = 0; i < N; i += size) {
-                // po każdym elemencie w transformacie
-                for (int j = 0; j < step; j++) {
-                    // wyznaczenie W — docelowo uprzednio policzona i odczytywanie z tabeli, zgodnie z instrukcją
+            for (int i = 0; i < N; i += size) { // od pierwszego elementu z każdej transformaty
+                for (int j = 0; j < step; j++) { // po każdym elemencie w transformacie
+                    int m = i + j; // indeks elementu w wynikowej tablicy
+
                     double omega = 2 * Math.PI * j / size;
                     Complex W = new Complex(Math.cos(omega), -Math.sin(omega));
+                    Complex first = complexSamples[m].copy();
+                    Complex second = complexSamples[m + step].copy();
 
-                    Complex first = complexSamples[i + j];
-                    Complex second = complexSamples[i + j + step];
-
-                    complexSamples[i + j] = first.plus(second);
-                    complexSamples[i + j + step] = first.minus(second).times(W);
+                    complexSamples[m] = first.plus(second).times(W);
+                    complexSamples[m + step] = first.minus(second).times(W);
                 }
             }
         }
 
-        for (int i = 0; i < N; i++) {
-            complexSamples[i].setReal(complexSamples[i].real() / N);
-            complexSamples[i].setImaginary(complexSamples[i].imaginary() / N);
-        }
-
-        return flipBits(complexSamples, log2N);
+        return complexSamples;
     }
 
-    private static Complex[] createComplexSamples(double[] flipped) {
-        Complex[] complexSamples = new Complex[flipped.length];
-        for (int i = 0; i < flipped.length; i++) {
-            complexSamples[i] = new Complex(flipped[i], 0);
+    private static Complex[] createComplexSamples(double[] samples) {
+        Complex[] complexSamples = new Complex[samples.length];
+        for (int i = 0; i < samples.length; i++) {
+            complexSamples[i] = new Complex(samples[i], 0);
         }
         return complexSamples;
     }
@@ -154,7 +153,7 @@ public class SignalOperations {
      * @param log2N No. of bits
      * @return Flipped array.
      */
-    private static Complex[] flipBits(Complex[] samples, int log2N) {
+    public static Complex[] flipBits(Complex[] samples, int log2N) {
         for (int i = 0; i < samples.length; i++) {
             int flippedBit = reverseBits(i, log2N);
             if (i < flippedBit) {
@@ -182,7 +181,7 @@ public class SignalOperations {
         return reversed;
     }
 
-    private static Complex[] createWCoefficients(int N2) {
+    private static Complex[] createW(int N2) {
         Complex[] W = new Complex[N2];
         double omega;
         for (int n = 0; n < N2; n++) {

@@ -35,6 +35,11 @@ public final class Complex {
                 this.real * other.imaginary + this.imaginary * other.real);
     }
 
+    public void negate() {
+        this.real *= -1;
+        this.imaginary *= -1;
+    }
+
     @Override
     public String toString() {
         return "Complex{R=%.3f,I=%.3f}".formatted(real, imaginary);
@@ -54,4 +59,7 @@ public final class Complex {
         return Objects.hash(real, imaginary);
     }
 
+    public Complex copy() {
+        return new Complex(real, imaginary);
+    }
 }
