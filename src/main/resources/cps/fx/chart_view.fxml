@@ -6,7 +6,7 @@
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="cps.fx.ChartController"
-            prefHeight="966.0" prefWidth="970.0"
+            prefHeight="930.0" prefWidth="970.0"
             maxWidth="Infinity">
     <ScrollPane fx:id="chartScrollPane" prefHeight="966.0" prefWidth="970.0"
                 maxWidth="Infinity"
