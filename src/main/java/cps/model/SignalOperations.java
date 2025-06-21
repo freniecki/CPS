@@ -236,8 +236,8 @@ public class SignalOperations {
      */
     public static double[] dctII(double[] samples) {
         int N = samples.length;
-        double c0 = Math.pow(N, -0.5);
-        double cm = c0 * Math.pow(2, 0.5);
+        double c0 = Math.sqrt(1.0 / N);
+        double cm = Math.sqrt(2.0 / N);
 
         double[] result = new double[N];
         for (int m = 0; m < N; m++) {
@@ -268,16 +268,19 @@ public class SignalOperations {
         samples = fctFlip(samples);
 
         // 2. calculate fft of samples
-        int log2N = (int)(Math.log(N) / Math.log(2));
+        int log2N = (int) (Math.log(N) / Math.log(2));
         Complex[] fftResult = fftDIF(samples, log2N);
 
-        // 3. for every find real value of operation
+        // 3. for every find real value of fftResult
         double[] result = new double[N];
         for (int m = 0; m < N; m++) {
             double sigma = Math.PI * m / (2 * N);
-            double value = fftResult[m].real() * Math.cos(sigma)
-                    + fftResult[m].imaginary() * Math.sin(sigma);
-            result[m] = m == 0 ? value * c0 : value * cm;
+            Complex W = new Complex(Math.cos(sigma), Math.sin(sigma));
+
+            double value = fftResult[m].times(W).real();
+
+            if (m == 0) result[m] = value * c0;
+            else result[m] = value * cm;
         }
 
         return result;
